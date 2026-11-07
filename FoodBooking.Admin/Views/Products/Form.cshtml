@@ -7,10 +7,10 @@
 }
 @section Head { <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.css" rel="stylesheet" /> }
 <div class="toolbar">
-    <a href="/products" class="btn btn-light btn-sm"><i class="bi bi-arrow-left"></i> Products</a>
+    <a href="~/products" class="btn btn-light btn-sm"><i class="bi bi-arrow-left"></i> Products</a>
     @if (Model.Id > 0) { <a class="btn btn-sm btn-outline-dark ms-auto" target="_blank" href="@((await SettingsSvc.GetAsync()).FrontSiteUrl)/product/@Model.Slug"><i class="bi bi-box-arrow-up-right"></i> View on website</a> }
 </div>
-<form method="post" action="/products/save" enctype="multipart/form-data">
+<form method="post" action="~/products/save" enctype="multipart/form-data">
     @Html.AntiForgeryToken()
     <input type="hidden" asp-for="Id" />
     <div asp-validation-summary="All" class="text-danger small mb-2"></div>
@@ -40,8 +40,8 @@
                                     <div class="img-tile @(i == 0 ? "main" : "")">
                                         <img src="@img.Url" alt="" />
                                         <div class="actions">
-                                            @if (i > 0) { <button class="btn btn-sm btn-light" formaction="/products/mainimage/@img.Id" formnovalidate title="Make main image"><i class="bi bi-star"></i></button> }
-                                            <button class="btn btn-sm btn-danger" formaction="/products/deleteimage/@img.Id" formnovalidate onclick="return confirm('Remove this image?')" title="Remove"><i class="bi bi-trash"></i></button>
+                                            @if (i > 0) { <button class="btn btn-sm btn-light" formaction="~/products/mainimage/@img.Id" formnovalidate title="Make main image"><i class="bi bi-star"></i></button> }
+                                            <button class="btn btn-sm btn-danger" formaction="~/products/deleteimage/@img.Id" formnovalidate onclick="return confirm('Remove this image?')" title="Remove"><i class="bi bi-trash"></i></button>
                                         </div>
                                     </div>
                                 </div>
@@ -78,7 +78,7 @@
                             </tbody>
                         </table>
                     }
-                    @if (attrs.Count == 0) { <p class="text-muted mb-0">No attributes yet. <a href="/attributes/create">Create one</a>.</p> }
+                    @if (attrs.Count == 0) { <p class="text-muted mb-0">No attributes yet. <a href="~/attributes/create">Create one</a>.</p> }
                 </div>
             </div>
 

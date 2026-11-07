@@ -18,7 +18,7 @@
                     <option value="lowstock" selected="@(status == "lowstock")">Low stock</option>
                 </select></div>
             <div class="col-md-1 d-grid"><button class="btn btn-dark"><i class="bi bi-funnel"></i></button></div>
-            <div class="col-md-1 d-grid"><a href="/products/create" class="btn btn-primary"><i class="bi bi-plus-lg"></i> New</a></div>
+            <div class="col-md-1 d-grid"><a href="~/products/create" class="btn btn-primary"><i class="bi bi-plus-lg"></i> New</a></div>
         </form>
     </div>
 </div>
@@ -31,7 +31,7 @@
                 {
                     <tr>
                         <td><img class="thumb" src="@p.MainImage" alt="" /></td>
-                        <td><a href="/products/edit/@p.Id" class="fw-semibold">@p.Name</a><div class="small text-muted">@p.Sku</div></td>
+                        <td><a href="~/products/edit/@p.Id" class="fw-semibold">@p.Name</a><div class="small text-muted">@p.Sku</div></td>
                         <td>@p.Category?.Name</td>
                         <td>@p.Brand?.Name</td>
                         <td>@p.SellingPrice.Money(c) @if (p.OnSale) { <del class="small text-muted">@p.Price.Money(c)</del> }</td>
@@ -39,10 +39,10 @@
                         <td>@p.SoldCount</td>
                         <td>@if (p.IsActive) { <span class="badge bg-success">Active</span> } else { <span class="badge bg-secondary">Hidden</span> }</td>
                         <td class="text-end text-nowrap">
-                            <a href="/products/edit/@p.Id" class="btn btn-sm btn-light" title="Edit"><i class="bi bi-pencil"></i></a>
-                            <form method="post" action="/products/toggleactive/@p.Id" class="d-inline">@Html.AntiForgeryToken()<button class="btn btn-sm btn-light" title="Show/hide"><i class="bi bi-eye@(p.IsActive ? "-slash" : "")"></i></button></form>
-                            <form method="post" action="/products/duplicate/@p.Id" class="d-inline">@Html.AntiForgeryToken()<button class="btn btn-sm btn-light" title="Duplicate"><i class="bi bi-copy"></i></button></form>
-                            <form method="post" action="/products/delete/@p.Id" class="d-inline" data-confirm="Delete @p.Name?">@Html.AntiForgeryToken()<button class="btn btn-sm btn-light text-danger" title="Delete"><i class="bi bi-trash"></i></button></form>
+                            <a href="~/products/edit/@p.Id" class="btn btn-sm btn-light" title="Edit"><i class="bi bi-pencil"></i></a>
+                            <form method="post" action="~/products/toggleactive/@p.Id" class="d-inline">@Html.AntiForgeryToken()<button class="btn btn-sm btn-light" title="Show/hide"><i class="bi bi-eye@(p.IsActive ? "-slash" : "")"></i></button></form>
+                            <form method="post" action="~/products/duplicate/@p.Id" class="d-inline">@Html.AntiForgeryToken()<button class="btn btn-sm btn-light" title="Duplicate"><i class="bi bi-copy"></i></button></form>
+                            <form method="post" action="~/products/delete/@p.Id" class="d-inline" data-confirm="Delete @p.Name?">@Html.AntiForgeryToken()<button class="btn btn-sm btn-light text-danger" title="Delete"><i class="bi bi-trash"></i></button></form>
                         </td>
                     </tr>
                 }

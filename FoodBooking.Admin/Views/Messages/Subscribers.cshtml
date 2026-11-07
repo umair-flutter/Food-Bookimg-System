@@ -1,6 +1,6 @@
 @model List<NewsletterSubscriber>
 @{ ViewData["Title"] = "Newsletter Subscribers"; }
-<div class="toolbar"><span class="text-muted small">@Model.Count subscriber(s) from the website footer form.</span><a href="/messages/exportsubscribers" class="btn btn-sm btn-outline-success ms-auto"><i class="bi bi-filetype-csv"></i> Export CSV</a></div>
+<div class="toolbar"><span class="text-muted small">@Model.Count subscriber(s) from the website footer form.</span><a href="~/messages/exportsubscribers" class="btn btn-sm btn-outline-success ms-auto"><i class="bi bi-filetype-csv"></i> Export CSV</a></div>
 <div class="card" style="max-width:800px">
     <div class="table-responsive">
         <table class="table table-hover">
@@ -9,7 +9,7 @@
                 @foreach (var s in Model)
                 {
                     <tr><td>@s.Email</td><td class="small">@s.CreatedAt.ToLocalTime().ToString("MMM d, yyyy")</td>
-                        <td class="text-end"><form method="post" action="/messages/deletesubscriber/@s.Id" class="d-inline" data-confirm="Remove @s.Email?">@Html.AntiForgeryToken()<button class="btn btn-sm btn-light text-danger"><i class="bi bi-trash"></i></button></form></td></tr>
+                        <td class="text-end"><form method="post" action="~/messages/deletesubscriber/@s.Id" class="d-inline" data-confirm="Remove @s.Email?">@Html.AntiForgeryToken()<button class="btn btn-sm btn-light text-danger"><i class="bi bi-trash"></i></button></form></td></tr>
                 }
                 @if (Model.Count == 0) { <tr><td colspan="3" class="text-center text-muted py-4">No subscribers yet.</td></tr> }
             </tbody>

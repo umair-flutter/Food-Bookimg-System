@@ -2,7 +2,7 @@
 @{ ViewData["Title"] = "Attributes & Options"; }
 <div class="toolbar">
     <span class="text-muted small">Reusable choices like Size, Spice Level or Extra Toppings. Assign values and prices per product in the product editor.</span>
-    <a href="/attributes/create" class="btn btn-primary btn-sm ms-auto"><i class="bi bi-plus-lg"></i> New attribute</a>
+    <a href="~/attributes/create" class="btn btn-primary btn-sm ms-auto"><i class="bi bi-plus-lg"></i> New attribute</a>
 </div>
 <div class="card">
     <div class="table-responsive">
@@ -12,13 +12,13 @@
                 @foreach (var a in Model)
                 {
                     <tr>
-                        <td><a href="/attributes/edit/@a.Id" class="fw-semibold">@a.Name</a></td>
+                        <td><a href="~/attributes/edit/@a.Id" class="fw-semibold">@a.Name</a></td>
                         <td>@(a.InputType == AttributeInputType.SingleSelect ? "Choose one" : "Choose many")</td>
                         <td>@(a.IsRequired ? "Yes" : "No")</td>
                         <td>@foreach (var v in a.Values) { <span class="badge bg-light text-dark me-1">@v.Value</span> }</td>
                         <td class="text-end text-nowrap">
-                            <a href="/attributes/edit/@a.Id" class="btn btn-sm btn-light"><i class="bi bi-pencil"></i></a>
-                            <form method="post" action="/attributes/delete/@a.Id" class="d-inline" data-confirm="Delete @a.Name? It will be removed from all products.">@Html.AntiForgeryToken()<button class="btn btn-sm btn-light text-danger"><i class="bi bi-trash"></i></button></form>
+                            <a href="~/attributes/edit/@a.Id" class="btn btn-sm btn-light"><i class="bi bi-pencil"></i></a>
+                            <form method="post" action="~/attributes/delete/@a.Id" class="d-inline" data-confirm="Delete @a.Name? It will be removed from all products.">@Html.AntiForgeryToken()<button class="btn btn-sm btn-light text-danger"><i class="bi bi-trash"></i></button></form>
                         </td>
                     </tr>
                 }

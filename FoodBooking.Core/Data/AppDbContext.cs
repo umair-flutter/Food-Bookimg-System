@@ -30,6 +30,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<NewsletterSubscriber> NewsletterSubscribers => Set<NewsletterSubscriber>();
     public DbSet<NotificationLog> NotificationLogs => Set<NotificationLog>();
 
+    /// <summary>SQLite (hosted demo) can't sort or compare decimals, so store them as REAL there.</summary>
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        base.ConfigureConventions(configurationBuilder);
+        if (Database.IsSqlite()) configurationBuilder.Properties<decimal>().HaveConversion<double>();
+    }
+
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Category>().HasIndex(x => x.Slug).IsUnique();

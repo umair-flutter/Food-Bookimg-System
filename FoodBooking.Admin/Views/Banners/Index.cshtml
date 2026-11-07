@@ -4,12 +4,12 @@
     var pos = (BannerPosition?)ViewBag.Position;
 }
 <div class="toolbar">
-    <a class="btn btn-sm @(pos == null ? "btn-dark" : "btn-light")" href="/banners">All</a>
+    <a class="btn btn-sm @(pos == null ? "btn-dark" : "btn-light")" href="~/banners">All</a>
     @foreach (var p in Enum.GetValues<BannerPosition>())
     {
-        <a class="btn btn-sm @(pos == p ? "btn-dark" : "btn-light")" href="/banners?position=@p">@p.PositionText()</a>
+        <a class="btn btn-sm @(pos == p ? "btn-dark" : "btn-light")" href="~/banners?position=@p">@p.PositionText()</a>
     }
-    <a href="/banners/create@(pos != null ? "?position=" + pos : "")" class="btn btn-primary btn-sm ms-auto"><i class="bi bi-plus-lg"></i> New banner</a>
+    <a href="~/banners/create@(pos != null ? "?position=" + pos : "")" class="btn btn-primary btn-sm ms-auto"><i class="bi bi-plus-lg"></i> New banner</a>
 </div>
 <div class="card">
     <div class="table-responsive">
@@ -20,15 +20,15 @@
                 {
                     <tr>
                         <td><img src="@b.ImageUrl" style="width:120px;height:50px;object-fit:cover;border-radius:6px" alt="" /></td>
-                        <td><a href="/banners/edit/@b.Id" class="fw-semibold">@b.Title</a><div class="small text-muted">@b.SubTitle</div></td>
+                        <td><a href="~/banners/edit/@b.Id" class="fw-semibold">@b.Title</a><div class="small text-muted">@b.SubTitle</div></td>
                         <td class="small">@b.Position.PositionText()</td>
                         <td class="small">@b.LinkUrl</td>
                         <td class="small">@(b.StartDate?.ToString("MMM d") ?? "—") → @(b.EndDate?.ToString("MMM d") ?? "—")</td>
                         <td>@b.SortOrder</td>
                         <td>@if (b.IsActive) { <span class="badge bg-success">Active</span> } else { <span class="badge bg-secondary">Off</span> }</td>
                         <td class="text-end text-nowrap">
-                            <a href="/banners/edit/@b.Id" class="btn btn-sm btn-light"><i class="bi bi-pencil"></i></a>
-                            <form method="post" action="/banners/delete/@b.Id" class="d-inline" data-confirm="Delete this banner?">@Html.AntiForgeryToken()<button class="btn btn-sm btn-light text-danger"><i class="bi bi-trash"></i></button></form>
+                            <a href="~/banners/edit/@b.Id" class="btn btn-sm btn-light"><i class="bi bi-pencil"></i></a>
+                            <form method="post" action="~/banners/delete/@b.Id" class="d-inline" data-confirm="Delete this banner?">@Html.AntiForgeryToken()<button class="btn btn-sm btn-light text-danger"><i class="bi bi-trash"></i></button></form>
                         </td>
                     </tr>
                 }

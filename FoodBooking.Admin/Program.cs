@@ -26,6 +26,9 @@ builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(o => 
 
 var app = builder.Build();
 
+// PathBase (e.g. "/admin") lets the app run under a sub-path behind a reverse proxy.
+if (app.Configuration["PathBase"] is { Length: > 0 } pathBase) app.UsePathBase(pathBase);
+
 // `dotnet run -- --export-sql <file>` writes the database CREATE script (database/FoodBookingDb.sql) and exits.
 var exportIdx = Array.IndexOf(args, "--export-sql");
 if (exportIdx >= 0)

@@ -30,7 +30,7 @@ public class AuthController(AppDbContext db) : AdminController
 {
     [AllowAnonymous, HttpGet]
     public IActionResult Login(string? returnUrl) =>
-        User.Identity?.IsAuthenticated == true ? Redirect("/") : View(new LoginModel { ReturnUrl = returnUrl });
+        User.Identity?.IsAuthenticated == true ? Redirect("~/") : View(new LoginModel { ReturnUrl = returnUrl });
 
     [AllowAnonymous, HttpPost]
     public async Task<IActionResult> Login(LoginModel m)
@@ -52,7 +52,7 @@ public class AuthController(AppDbContext db) : AdminController
         };
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
             new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme)));
-        return LocalRedirect(!string.IsNullOrEmpty(m.ReturnUrl) && Url.IsLocalUrl(m.ReturnUrl) ? m.ReturnUrl : "/");
+        return LocalRedirect(!string.IsNullOrEmpty(m.ReturnUrl) && Url.IsLocalUrl(m.ReturnUrl) ? m.ReturnUrl : "~/");
     }
 
     [HttpPost]
@@ -78,6 +78,6 @@ public class AuthController(AppDbContext db) : AdminController
         user.PasswordHash = Passwords.Hash(m.NewPassword);
         await db.SaveChangesAsync();
         Success("Password changed successfully.");
-        return Redirect("/");
+        return Redirect("~/");
     }
 }

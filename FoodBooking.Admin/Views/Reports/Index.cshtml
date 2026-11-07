@@ -20,7 +20,7 @@
                     <option value="month" selected="@(groupBy == "month")">Month</option>
                 </select></div>
             <div class="col-md-1 d-grid"><button class="btn btn-dark">Run</button></div>
-            <div class="col-md-2 d-grid"><a class="btn btn-outline-success" href="/orders/export?from=@from.ToString("yyyy-MM-dd")&to=@to.ToString("yyyy-MM-dd")"><i class="bi bi-filetype-csv"></i> Orders CSV</a></div>
+            <div class="col-md-2 d-grid"><a class="btn btn-outline-success" href="~/orders/export?from=@from.ToString("yyyy-MM-dd")&to=@to.ToString("yyyy-MM-dd")"><i class="bi bi-filetype-csv"></i> Orders CSV</a></div>
         </form>
     </div>
 </div>

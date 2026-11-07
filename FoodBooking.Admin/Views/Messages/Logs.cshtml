@@ -4,8 +4,8 @@
     var ch = (NotificationChannel?)ViewBag.Channel;
 }
 <div class="toolbar">
-    <a class="btn btn-sm @(ch == null ? "btn-dark" : "btn-light")" href="/messages/logs">All</a>
-    @foreach (var c in Enum.GetValues<NotificationChannel>()) { <a class="btn btn-sm @(ch == c ? "btn-dark" : "btn-light")" href="/messages/logs?channel=@c">@c</a> }
+    <a class="btn btn-sm @(ch == null ? "btn-dark" : "btn-light")" href="~/messages/logs">All</a>
+    @foreach (var c in Enum.GetValues<NotificationChannel>()) { <a class="btn btn-sm @(ch == c ? "btn-dark" : "btn-light")" href="~/messages/logs?channel=@c">@c</a> }
     <span class="text-muted small ms-auto">Every email, SMS and Clover POS call is recorded here — including ones skipped because the service is switched off.</span>
 </div>
 <div class="card">

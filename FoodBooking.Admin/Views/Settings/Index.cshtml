@@ -10,7 +10,7 @@
         <div class="list-group">
             @foreach (var s in SettingsController.Sections)
             {
-                <a class="list-group-item list-group-item-action @(s.key == current ? "active bg-danger border-danger" : "")" href="/settings?section=@s.key"><i class="bi @s.icon me-2"></i>@s.title</a>
+                <a class="list-group-item list-group-item-action @(s.key == current ? "active bg-danger border-danger" : "")" href="~/settings?section=@s.key"><i class="bi @s.icon me-2"></i>@s.title</a>
             }
         </div>
     </div>
@@ -18,7 +18,7 @@
         <div class="card">
             <div class="card-header"><i class="bi @meta.icon me-2"></i>@meta.title</div>
             <div class="card-body">
-                <form method="post" action="/settings/save?section=@current" enctype="multipart/form-data" autocomplete="off">
+                <form method="post" action="~/settings/save?section=@current" enctype="multipart/form-data" autocomplete="off">
                     @Html.AntiForgeryToken()
                     <div asp-validation-summary="All" class="text-danger small mb-2"></div>
                     @switch (current)
@@ -165,10 +165,10 @@
                     <hr />
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <form method="post" action="/settings/testemail" class="input-group">@Html.AntiForgeryToken()<input type="email" name="to" class="form-control" placeholder="Send test email to…" required /><button class="btn btn-outline-dark">Test email</button></form>
+                            <form method="post" action="~/settings/testemail" class="input-group">@Html.AntiForgeryToken()<input type="email" name="to" class="form-control" placeholder="Send test email to…" required /><button class="btn btn-outline-dark">Test email</button></form>
                         </div>
                         <div class="col-md-6">
-                            <form method="post" action="/settings/testsms" class="input-group">@Html.AntiForgeryToken()<input name="to" class="form-control" placeholder="Send test SMS to +1…" required /><button class="btn btn-outline-dark">Test SMS</button></form>
+                            <form method="post" action="~/settings/testsms" class="input-group">@Html.AntiForgeryToken()<input name="to" class="form-control" placeholder="Send test SMS to +1…" required /><button class="btn btn-outline-dark">Test SMS</button></form>
                         </div>
                     </div>
                 }

@@ -1,9 +1,9 @@
 @model Holiday
 @{ ViewData["Title"] = Model.Id == 0 ? "Add Holiday" : "Edit Holiday"; }
-<div class="toolbar"><a href="/holidays" class="btn btn-light btn-sm"><i class="bi bi-arrow-left"></i> Holidays</a></div>
+<div class="toolbar"><a href="~/holidays" class="btn btn-light btn-sm"><i class="bi bi-arrow-left"></i> Holidays</a></div>
 <div class="card" style="max-width:640px">
     <div class="card-body">
-        <form method="post" action="/holidays/save">
+        <form method="post" action="~/holidays/save">
             @Html.AntiForgeryToken()
             <input type="hidden" asp-for="Id" />
             <div asp-validation-summary="All" class="text-danger small mb-2"></div>

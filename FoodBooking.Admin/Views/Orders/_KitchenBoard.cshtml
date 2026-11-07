@@ -20,7 +20,7 @@
                     var mins = (int)(DateTime.UtcNow - o.CreatedAt).TotalMinutes;
                     <div class="ticket @o.Status @(o.Status == OrderStatus.Pending ? "new" : "")">
                         <div class="d-flex justify-content-between">
-                            <a href="/orders/details/@o.Id" class="fw-bold text-dark">#@o.OrderNumber</a>
+                            <a href="~/orders/details/@o.Id" class="fw-bold text-dark">#@o.OrderNumber</a>
                             <span class="badge bg-@(mins > 30 ? "danger" : "light text-dark")">@mins min</span>
                         </div>
                         <div class="small"><strong>@o.OrderType</strong> · @(o.ScheduledFor?.ToString("ddd h:mm tt") ?? "ASAP") · @o.CustomerName</div>
@@ -32,20 +32,20 @@
                             @switch (o.Status)
                             {
                                 case OrderStatus.Pending:
-                                    <button class="btn btn-sm btn-success" data-kitchen-action="/orders/accept/@o.Id">Accept</button>
-                                    <button class="btn btn-sm btn-outline-danger" data-kitchen-action="/orders/updatestatus/@o.Id" data-status="@OrderStatus.Cancelled" onclick="return confirm('Reject and cancel this order?')">Reject</button>
+                                    <button class="btn btn-sm btn-success" data-kitchen-action="~/orders/accept/@o.Id">Accept</button>
+                                    <button class="btn btn-sm btn-outline-danger" data-kitchen-action="~/orders/updatestatus/@o.Id" data-status="@OrderStatus.Cancelled" onclick="return confirm('Reject and cancel this order?')">Reject</button>
                                     break;
                                 case OrderStatus.Confirmed:
-                                    <button class="btn btn-sm btn-primary" data-kitchen-action="/orders/updatestatus/@o.Id" data-status="@OrderStatus.Preparing">Start preparing</button>
+                                    <button class="btn btn-sm btn-primary" data-kitchen-action="~/orders/updatestatus/@o.Id" data-status="@OrderStatus.Preparing">Start preparing</button>
                                     break;
                                 case OrderStatus.Preparing:
-                                    <button class="btn btn-sm btn-success" data-kitchen-action="/orders/updatestatus/@o.Id" data-status="@(o.OrderType == OrderType.Pickup ? OrderStatus.ReadyForPickup : OrderStatus.OutForDelivery)">@(o.OrderType == OrderType.Pickup ? "Ready for pickup" : "Out for delivery")</button>
+                                    <button class="btn btn-sm btn-success" data-kitchen-action="~/orders/updatestatus/@o.Id" data-status="@(o.OrderType == OrderType.Pickup ? OrderStatus.ReadyForPickup : OrderStatus.OutForDelivery)">@(o.OrderType == OrderType.Pickup ? "Ready for pickup" : "Out for delivery")</button>
                                     break;
                                 default:
-                                    <button class="btn btn-sm btn-dark" data-kitchen-action="/orders/updatestatus/@o.Id" data-status="@OrderStatus.Delivered">@(o.OrderType == OrderType.Pickup ? "Collected" : "Delivered")</button>
+                                    <button class="btn btn-sm btn-dark" data-kitchen-action="~/orders/updatestatus/@o.Id" data-status="@OrderStatus.Delivered">@(o.OrderType == OrderType.Pickup ? "Collected" : "Delivered")</button>
                                     break;
                             }
-                            <a class="btn btn-sm btn-light" href="/orders/invoice/@o.Id" target="_blank" title="Print ticket"><i class="bi bi-printer"></i></a>
+                            <a class="btn btn-sm btn-light" href="~/orders/invoice/@o.Id" target="_blank" title="Print ticket"><i class="bi bi-printer"></i></a>
                         </div>
                     </div>
                 }

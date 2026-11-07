@@ -25,7 +25,7 @@
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <span>@Model.Total orders</span>
-        <a class="btn btn-sm btn-outline-success" href="/orders/export@(Context.Request.QueryString)"><i class="bi bi-filetype-csv"></i> Export CSV</a>
+        <a class="btn btn-sm btn-outline-success" href="~/orders/export@(Context.Request.QueryString)"><i class="bi bi-filetype-csv"></i> Export CSV</a>
     </div>
     <div class="table-responsive">
         <table class="table table-hover">
@@ -34,7 +34,7 @@
                 @foreach (var o in Model.Items)
                 {
                     <tr class="@(!o.KitchenAcknowledged ? "table-warning" : "")">
-                        <td><a href="/orders/details/@o.Id" class="fw-semibold">#@o.OrderNumber</a> @if (!o.KitchenAcknowledged) { <span class="badge bg-danger">NEW</span> }</td>
+                        <td><a href="~/orders/details/@o.Id" class="fw-semibold">#@o.OrderNumber</a> @if (!o.KitchenAcknowledged) { <span class="badge bg-danger">NEW</span> }</td>
                         <td class="small">@o.CreatedAt.ToLocalTime().ToString("MMM d, yyyy h:mm tt")@if (o.ScheduledFor.HasValue) { <div class="text-primary"><i class="bi bi-clock"></i> @o.ScheduledFor.Value.ToString("ddd h:mm tt")</div> }</td>
                         <td>@o.CustomerName<div class="small text-muted">@o.Phone</div></td>
                         <td>@o.OrderType</td>
@@ -42,7 +42,7 @@
                         <td class="small">@o.PaymentMethod.PaymentText()<br /><span class="badge bg-@o.PaymentStatus.PaymentBadge()">@o.PaymentStatus</span></td>
                         <td>@if (o.CloverOrderId != null) { <i class="bi bi-check-circle-fill text-success" title="Synced to Clover"></i> } else if (o.CloverSyncError != null) { <i class="bi bi-x-circle-fill text-danger" title="@o.CloverSyncError"></i> } else { <span class="text-muted">–</span> }</td>
                         <td class="text-end fw-semibold">@o.Total.Money(c)</td>
-                        <td class="text-end"><a href="/orders/details/@o.Id" class="btn btn-sm btn-light">Open</a></td>
+                        <td class="text-end"><a href="~/orders/details/@o.Id" class="btn btn-sm btn-light">Open</a></td>
                     </tr>
                 }
                 @if (Model.Items.Count == 0) { <tr><td colspan="9" class="text-center text-muted py-4">No orders found.</td></tr> }

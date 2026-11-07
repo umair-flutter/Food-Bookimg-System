@@ -1,9 +1,9 @@
 @model Tag
 @{ ViewData["Title"] = Model.Id == 0 ? "New Tag" : "Edit Tag"; }
-<div class="toolbar"><a href="/tags" class="btn btn-light btn-sm"><i class="bi bi-arrow-left"></i> Tags</a></div>
+<div class="toolbar"><a href="~/tags" class="btn btn-light btn-sm"><i class="bi bi-arrow-left"></i> Tags</a></div>
 <div class="card" style="max-width:760px">
     <div class="card-body">
-        <form method="post" action="/tags/save">
+        <form method="post" action="~/tags/save">
             @Html.AntiForgeryToken()
             <input type="hidden" asp-for="Id" />
             <div asp-validation-summary="All" class="text-danger small mb-2"></div>

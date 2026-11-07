@@ -22,7 +22,7 @@
                 <h4 class="fw-bold mb-0">@s.CompanyName</h4>
                 <small class="text-muted">Admin Panel</small>
             </div>
-            <form method="post" action="/auth/login">
+            <form method="post" action="~/auth/login">
                 @Html.AntiForgeryToken()
                 <input type="hidden" asp-for="ReturnUrl" />
                 <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>

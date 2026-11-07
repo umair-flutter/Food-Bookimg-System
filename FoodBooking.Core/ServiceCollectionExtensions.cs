@@ -16,7 +16,14 @@ public static class ServiceCollectionExtensions
     {
         var cs = config.GetConnectionString("DefaultConnection")
                  ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is missing in appsettings.json.");
-        services.AddDbContext<AppDbContext>(o => o.UseSqlServer(cs, sql => sql.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
+        // Database:Provider = "Sqlite" runs a self-contained demo database (used for the hosted demo).
+        var useSqlite = string.Equals(config["Database:Provider"], "Sqlite", StringComparison.OrdinalIgnoreCase);
+        services.AddDbContext<AppDbContext>(o =>
+        {
+            if (useSqlite) o.UseSqlite(config.GetConnectionString("Sqlite") ?? "Data Source=foodbooking.db",
+                sql => sql.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
+            else o.UseSqlServer(cs, sql => sql.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
+        });
         services.AddMemoryCache();
         services.AddHttpClient();
         services.AddSingleton(new UploadOptions { PhysicalPath = FileStorage.ResolveRoot(config["Uploads:PhysicalPath"], env) });

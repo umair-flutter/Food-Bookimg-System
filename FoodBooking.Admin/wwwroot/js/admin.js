@@ -39,7 +39,7 @@
 
     let lastId = parseInt(sessionStorage.getItem('fb-last-order') || '0');
     function poll() {
-        $.getJSON('/dashboard/poll').done(r => {
+        $.getJSON((window.APP_BASE || '/') + 'dashboard/poll').done(r => {
             const $b = $('[data-new-orders]');
             $b.text(r.count).toggleClass('d-none', r.count === 0);
             document.title = (r.count ? `(${r.count}) ` : '') + document.title.replace(/^\(\d+\) /, '');

@@ -6,13 +6,13 @@
     var next = Model.NextStatuses().ToList();
 }
 <div class="toolbar">
-    <a href="/orders" class="btn btn-light btn-sm"><i class="bi bi-arrow-left"></i> Orders</a>
+    <a href="~/orders" class="btn btn-light btn-sm"><i class="bi bi-arrow-left"></i> Orders</a>
     <span class="badge bg-@Model.Status.StatusBadge() fs-6">@Model.Status.StatusText()</span>
     <span class="badge bg-@Model.PaymentStatus.PaymentBadge() fs-6">@Model.PaymentStatus</span>
     <div class="ms-auto d-flex gap-2 flex-wrap">
-        <a href="/orders/invoice/@Model.Id" target="_blank" class="btn btn-sm btn-outline-dark"><i class="bi bi-printer"></i> Print invoice</a>
-        <form method="post" action="/orders/resendconfirmation/@Model.Id">@Html.AntiForgeryToken()<button class="btn btn-sm btn-outline-dark"><i class="bi bi-envelope"></i> Email invoice</button></form>
-        <form method="post" action="/orders/sendtoclover/@Model.Id" data-confirm="Send this order to Clover POS@(Model.CloverOrderId != null ? " again? It already has a Clover order" : "")?">@Html.AntiForgeryToken()<button class="btn btn-sm btn-outline-success"><i class="bi bi-shop-window"></i> @(Model.CloverOrderId == null ? "Send to Clover POS" : "Re-send to Clover")</button></form>
+        <a href="~/orders/invoice/@Model.Id" target="_blank" class="btn btn-sm btn-outline-dark"><i class="bi bi-printer"></i> Print invoice</a>
+        <form method="post" action="~/orders/resendconfirmation/@Model.Id">@Html.AntiForgeryToken()<button class="btn btn-sm btn-outline-dark"><i class="bi bi-envelope"></i> Email invoice</button></form>
+        <form method="post" action="~/orders/sendtoclover/@Model.Id" data-confirm="Send this order to Clover POS@(Model.CloverOrderId != null ? " again? It already has a Clover order" : "")?">@Html.AntiForgeryToken()<button class="btn btn-sm btn-outline-success"><i class="bi bi-shop-window"></i> @(Model.CloverOrderId == null ? "Send to Clover POS" : "Re-send to Clover")</button></form>
     </div>
 </div>
 
@@ -59,7 +59,7 @@
             <div class="card mb-3 border-primary">
                 <div class="card-header">Update status</div>
                 <div class="card-body">
-                    <form method="post" action="/orders/updatestatus/@Model.Id">
+                    <form method="post" action="~/orders/updatestatus/@Model.Id">
                         @Html.AntiForgeryToken()
                         <select name="status" class="form-select mb-2">
                             @foreach (var st in next) { <option value="@st">@st.StatusText()</option> }
@@ -74,7 +74,7 @@
         <div class="card mb-3">
             <div class="card-header">Customer</div>
             <div class="card-body">
-                <div class="fw-semibold">@Model.CustomerName @if (Model.IsGuest) { <span class="badge bg-light text-dark">Guest</span> } else if (Model.CustomerId != null) { <a href="/customers/details/@Model.CustomerId" class="small">view profile</a> }</div>
+                <div class="fw-semibold">@Model.CustomerName @if (Model.IsGuest) { <span class="badge bg-light text-dark">Guest</span> } else if (Model.CustomerId != null) { <a href="~/customers/details/@Model.CustomerId" class="small">view profile</a> }</div>
                 <div><i class="bi bi-telephone me-1"></i><a href="tel:@Model.Phone">@Model.Phone</a></div>
                 <div><i class="bi bi-envelope me-1"></i><a href="mailto:@Model.Email">@Model.Email</a></div>
                 <hr />
@@ -93,7 +93,7 @@
             <div class="card-body">
                 <div>@Model.PaymentMethod.PaymentText() — <span class="badge bg-@Model.PaymentStatus.PaymentBadge()">@Model.PaymentStatus</span></div>
                 @if (!string.IsNullOrEmpty(Model.TransactionId)) { <div class="small text-muted">Transaction: @Model.TransactionId</div> }
-                <form method="post" action="/orders/updatepayment/@Model.Id" class="mt-2 d-flex gap-2">
+                <form method="post" action="~/orders/updatepayment/@Model.Id" class="mt-2 d-flex gap-2">
                     @Html.AntiForgeryToken()
                     <select name="paymentStatus" class="form-select form-select-sm" asp-items="Html.GetEnumSelectList<PaymentStatus>()"></select>
                     <input name="transactionId" class="form-control form-control-sm" placeholder="Txn ID" />

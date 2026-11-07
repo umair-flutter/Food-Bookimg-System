@@ -30,6 +30,9 @@ builder.Services.AddScoped<SiteContext>();
 
 var app = builder.Build();
 
+// PathBase (e.g. "/admin") lets the app run under a sub-path behind a reverse proxy.
+if (app.Configuration["PathBase"] is { Length: > 0 } pathBase) app.UsePathBase(pathBase);
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/home/error");

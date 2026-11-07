@@ -8,7 +8,7 @@
 <div id="board"><partial name="_KitchenBoard" model="Model" /></div>
 @section Scripts {
     <script>
-        function refresh() { $('#board').load('/orders/kitchen?partial=1'); }
+        function refresh() { $('#board').load('@Url.Content("~/orders/kitchen")?partial=1'); }
         setInterval(refresh, 15000);
         $(document).on('admin:new-order', refresh);
         $(document).on('click', '[data-kitchen-action]', function () {

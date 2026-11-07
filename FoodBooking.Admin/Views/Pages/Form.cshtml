@@ -1,8 +1,8 @@
 @model CmsPage
 @{ ViewData["Title"] = Model.Id == 0 ? "New Page" : "Edit Page"; }
 @section Head { <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.css" rel="stylesheet" /> }
-<div class="toolbar"><a href="/pages" class="btn btn-light btn-sm"><i class="bi bi-arrow-left"></i> Pages</a></div>
-<form method="post" action="/pages/save">
+<div class="toolbar"><a href="~/pages" class="btn btn-light btn-sm"><i class="bi bi-arrow-left"></i> Pages</a></div>
+<form method="post" action="~/pages/save">
     @Html.AntiForgeryToken()
     <input type="hidden" asp-for="Id" />
     <div asp-validation-summary="All" class="text-danger small mb-2"></div>

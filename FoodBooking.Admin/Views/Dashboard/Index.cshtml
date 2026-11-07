@@ -9,7 +9,7 @@
 }
 <div class="row g-3 mb-3 mt-1">
     <div class="col-sm-6 col-xl-3"><div class="card stat"><div class="icon bg-danger-subtle text-danger"><i class="bi bi-bag"></i></div><div><small>Orders today</small><div class="num">@Model.OrdersToday</div><small>@Model.RevenueToday.Money(c) revenue</small></div></div></div>
-    <div class="col-sm-6 col-xl-3"><a href="/orders?status=Pending" class="text-decoration-none text-reset"><div class="card stat"><div class="icon bg-warning-subtle text-warning"><i class="bi bi-hourglass-split"></i></div><div><small>Pending orders</small><div class="num">@Model.PendingOrders</div><small>waiting for acceptance</small></div></div></a></div>
+    <div class="col-sm-6 col-xl-3"><a href="~/orders?status=Pending" class="text-decoration-none text-reset"><div class="card stat"><div class="icon bg-warning-subtle text-warning"><i class="bi bi-hourglass-split"></i></div><div><small>Pending orders</small><div class="num">@Model.PendingOrders</div><small>waiting for acceptance</small></div></div></a></div>
     <div class="col-sm-6 col-xl-3"><div class="card stat"><div class="icon bg-success-subtle text-success"><i class="bi bi-currency-dollar"></i></div><div><small>This month</small><div class="num">@Model.RevenueMonth.Money(c)</div><small>@Model.OrdersMonth orders</small></div></div></div>
     <div class="col-sm-6 col-xl-3"><div class="card stat"><div class="icon bg-primary-subtle text-primary"><i class="bi bi-people"></i></div><div><small>Customers</small><div class="num">@Model.Customers</div><small>@Model.Products active products · @Model.UnreadMessages unread msgs</small></div></div></div>
 </div>
@@ -29,7 +29,7 @@
     </div>
     <div class="col-xl-8">
         <div class="card">
-            <div class="card-header d-flex justify-content-between">Recent orders <a href="/orders" class="small">View all</a></div>
+            <div class="card-header d-flex justify-content-between">Recent orders <a href="~/orders" class="small">View all</a></div>
             <div class="table-responsive">
                 <table class="table table-hover">
                     <thead><tr><th>Order</th><th>Customer</th><th>Type</th><th>Status</th><th>Payment</th><th class="text-end">Total</th></tr></thead>
@@ -66,7 +66,7 @@
             <div class="card">
                 <div class="card-header text-danger"><i class="bi bi-exclamation-octagon"></i> Low stock</div>
                 <ul class="list-group list-group-flush">
-                    @foreach (var p in Model.LowStock) { <li class="list-group-item d-flex justify-content-between"><a href="/products/edit/@p.Id">@p.Name</a><span class="badge bg-danger">@p.StockQuantity left</span></li> }
+                    @foreach (var p in Model.LowStock) { <li class="list-group-item d-flex justify-content-between"><a href="~/products/edit/@p.Id">@p.Name</a><span class="badge bg-danger">@p.StockQuantity left</span></li> }
                 </ul>
             </div>
         }

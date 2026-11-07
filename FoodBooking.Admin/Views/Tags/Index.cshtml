@@ -2,7 +2,7 @@
 @{ ViewData["Title"] = "Product Tags"; }
 <div class="toolbar">
     <span class="text-muted small">Tags such as Latest, Best Sellers, New or Chef's Special. Tags marked "home" appear as product sections on the home page.</span>
-    <a href="/tags/create" class="btn btn-primary btn-sm ms-auto"><i class="bi bi-plus-lg"></i> New tag</a>
+    <a href="~/tags/create" class="btn btn-primary btn-sm ms-auto"><i class="bi bi-plus-lg"></i> New tag</a>
 </div>
 <div class="card">
     <div class="table-responsive">
@@ -19,8 +19,8 @@
                         <td>@t.SortOrder</td>
                         <td>@if (t.IsActive) { <span class="badge bg-success">Active</span> } else { <span class="badge bg-secondary">Hidden</span> }</td>
                         <td class="text-end text-nowrap">
-                            <a href="/tags/edit/@t.Id" class="btn btn-sm btn-light"><i class="bi bi-pencil"></i></a>
-                            <form method="post" action="/tags/delete/@t.Id" class="d-inline" data-confirm="Delete tag @t.Name?">@Html.AntiForgeryToken()<button class="btn btn-sm btn-light text-danger"><i class="bi bi-trash"></i></button></form>
+                            <a href="~/tags/edit/@t.Id" class="btn btn-sm btn-light"><i class="bi bi-pencil"></i></a>
+                            <form method="post" action="~/tags/delete/@t.Id" class="d-inline" data-confirm="Delete tag @t.Name?">@Html.AntiForgeryToken()<button class="btn btn-sm btn-light text-danger"><i class="bi bi-trash"></i></button></form>
                         </td>
                     </tr>
                 }
