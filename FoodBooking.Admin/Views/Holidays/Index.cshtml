@@ -1,0 +1,59 @@
+@model List<Holiday>
+@{
+    ViewData["Title"] = "Holidays & Opening Hours";
+    var hours = (List<BusinessHour>)ViewBag.Hours;
+}
+<div class="row g-3">
+    <div class="col-xl-6">
+        <div class="card">
+            <div class="card-header">Weekly opening hours</div>
+            <div class="card-body">
+                <form method="post" action="/holidays/savehours">
+                    @Html.AntiForgeryToken()
+                    <table class="table table-sm">
+                        <thead><tr><th>Day</th><th>Opens</th><th>Closes</th><th>Closed</th></tr></thead>
+                        <tbody>
+                            @for (int i = 0; i < hours.Count; i++)
+                            {
+                                var h = hours[i];
+                                <tr>
+                                    <td><input type="hidden" name="hours[@i].DayOfWeek" value="@h.DayOfWeek" />@h.DayOfWeek</td>
+                                    <td><input type="time" name="hours[@i].OpenTime" value="@h.OpenTime.ToString(@"hh\:mm")" class="form-control form-control-sm" /></td>
+                                    <td><input type="time" name="hours[@i].CloseTime" value="@h.CloseTime.ToString(@"hh\:mm")" class="form-control form-control-sm" /></td>
+                                    <td><input type="checkbox" name="hours[@i].IsClosed" value="true" class="form-check-input" @(h.IsClosed ? "checked" : "") /></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    <div class="form-text mb-2">Closing earlier than opening (e.g. 18:00 → 02:00) means the store closes after midnight. Customers can only order ASAP while you're open; otherwise they schedule a time.</div>
+                    <button class="btn btn-primary"><i class="bi bi-save"></i> Save hours</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">Holidays <a href="/holidays/create" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Add holiday</a></div>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead><tr><th>Date</th><th>Holiday</th><th>Hours</th><th class="text-end"></th></tr></thead>
+                    <tbody>
+                        @foreach (var h in Model)
+                        {
+                            <tr class="@(h.Date < DateTime.Today ? "text-muted" : "")">
+                                <td>@h.Date.ToString("ddd, MMM d, yyyy")</td>
+                                <td><strong>@h.Title</strong><div class="small">@h.Message</div></td>
+                                <td>@(h.IsClosedAllDay ? "Closed" : $"{StoreHoursService.Fmt(h.OpenTime!.Value)} – {StoreHoursService.Fmt(h.CloseTime!.Value)}")</td>
+                                <td class="text-end text-nowrap">
+                                    <a href="/holidays/edit/@h.Id" class="btn btn-sm btn-light"><i class="bi bi-pencil"></i></a>
+                                    <form method="post" action="/holidays/delete/@h.Id" class="d-inline" data-confirm="Delete @h.Title?">@Html.AntiForgeryToken()<button class="btn btn-sm btn-light text-danger"><i class="bi bi-trash"></i></button></form>
+                                </td>
+                            </tr>
+                        }
+                        @if (Model.Count == 0) { <tr><td colspan="4" class="text-center text-muted py-4">No holidays set.</td></tr> }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

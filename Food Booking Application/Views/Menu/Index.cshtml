@@ -1,0 +1,134 @@
+@model MenuViewModel
+@{
+    var s = await Site.SettingsAsync();
+    string Link(string? category = "~", string? brand = "~", string? tag = "~", string? sort = null, int page = 1)
+    {
+        var c = category == "~" ? Model.Category : category;
+        var b = brand == "~" ? Model.Brand : brand;
+        var t = tag == "~" ? Model.Tag : tag;
+        var qs = new List<string>();
+        if (!string.IsNullOrEmpty(Model.Q)) qs.Add("q=" + Uri.EscapeDataString(Model.Q));
+        if (!string.IsNullOrEmpty(c)) qs.Add("category=" + c);
+        if (!string.IsNullOrEmpty(b)) qs.Add("brand=" + b);
+        if (!string.IsNullOrEmpty(t)) qs.Add("tag=" + t);
+        var so = sort ?? Model.Sort;
+        if (so != "popular") qs.Add("sort=" + so);
+        if (Model.MinPrice.HasValue) qs.Add("minPrice=" + Model.MinPrice);
+        if (Model.MaxPrice.HasValue) qs.Add("maxPrice=" + Model.MaxPrice);
+        if (Model.Veg) qs.Add("veg=true");
+        if (page > 1) qs.Add("page=" + page);
+        return "/menu" + (qs.Count > 0 ? "?" + string.Join("&", qs) : "");
+    }
+}
+
+<div class="page-hero">
+    <div class="container">
+        <h1>@Model.Title</h1>
+        @if (!string.IsNullOrEmpty(Model.Subtitle)) { <p class="mb-0 text-white-50">@Model.Subtitle</p> }
+        <nav><ol class="breadcrumb"><li class="breadcrumb-item"><a href="/">Home</a></li><li class="breadcrumb-item"><a href="/menu">Menu</a></li><li class="breadcrumb-item active">@Model.Title</li></ol></nav>
+    </div>
+</div>
+
+<div class="container py-5">
+    @foreach (var b in Model.TopBanners)
+    {
+        <a class="promo-banner mb-4" style="min-height:140px;background-image:url('@b.ImageUrl')" href="@(b.LinkUrl ?? "#")">
+            <div><h3 class="mb-1">@b.Title</h3><p class="mb-0">@b.SubTitle</p></div>
+        </a>
+    }
+    <div class="row g-4">
+        <aside class="col-lg-3">
+            <button class="btn btn-outline-dark w-100 d-lg-none mb-3" data-bs-toggle="collapse" data-bs-target="#filters"><i class="bi bi-funnel"></i> Filters</button>
+            <div class="collapse d-lg-block" id="filters">
+                <div class="card p-3 filter-card">
+                    <form method="get" action="/menu">
+                        <input type="search" name="q" class="form-control" placeholder="Search menu…" value="@Model.Q" />
+                        @if (Model.Category != null) { <input type="hidden" name="category" value="@Model.Category" /> }
+                        @if (Model.Brand != null) { <input type="hidden" name="brand" value="@Model.Brand" /> }
+                        @if (Model.Tag != null) { <input type="hidden" name="tag" value="@Model.Tag" /> }
+                        <h6>Price</h6>
+                        <div class="d-flex gap-2">
+                            <input type="number" step="0.01" min="0" name="minPrice" class="form-control form-control-sm" placeholder="Min" value="@Model.MinPrice" />
+                            <input type="number" step="0.01" min="0" name="maxPrice" class="form-control form-control-sm" placeholder="Max" value="@Model.MaxPrice" />
+                        </div>
+                        <div class="form-check form-switch mt-3">
+                            <input class="form-check-input" type="checkbox" role="switch" id="veg" name="veg" value="true" @(Model.Veg ? "checked" : "") />
+                            <label class="form-check-label" for="veg">Vegetarian only</label>
+                        </div>
+                        <input type="hidden" name="sort" value="@Model.Sort" />
+                        <button class="btn btn-primary btn-sm w-100 mt-3">Apply</button>
+                    </form>
+
+                    <h6>Categories</h6>
+                    <div class="filter-list">
+                        <a href="@Link(category: null)" class="@(Model.Category == null ? "active" : "")">All categories</a>
+                        @foreach (var c in Model.Categories)
+                        {
+                            <a href="@Link(category: c.Slug)" class="@(Model.Category == c.Slug ? "active" : "")"><span>@c.Icon @c.Name</span></a>
+                            @foreach (var ch in c.Children)
+                            {
+                                <a href="@Link(category: ch.Slug)" class="ps-4 @(Model.Category == ch.Slug ? "active" : "")">@ch.Name</a>
+                            }
+                        }
+                    </div>
+
+                    @if (Model.Brands.Count > 0)
+                    {
+                        <h6>Brands</h6>
+                        <div class="filter-list">
+                            <a href="@Link(brand: null)" class="@(Model.Brand == null ? "active" : "")">All brands</a>
+                            @foreach (var b in Model.Brands) { <a href="@Link(brand: b.Slug)" class="@(Model.Brand == b.Slug ? "active" : "")">@b.Name</a> }
+                        </div>
+                    }
+
+                    <h6>Collections</h6>
+                    <div>
+                        @foreach (var t in Model.Tags) { <a class="chip @(Model.Tag == t.Slug ? "active" : "")" href="@Link(tag: Model.Tag == t.Slug ? null : t.Slug)">@t.Name</a> }
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <div class="col-lg-9">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <span class="text-muted">@Model.TotalCount item@(Model.TotalCount == 1 ? "" : "s") found</span>
+                <div class="d-flex align-items-center gap-2">
+                    <label class="small text-muted text-nowrap">Sort by</label>
+                    <select class="form-select form-select-sm" onchange="location=this.value">
+                        @foreach (var (val, label) in new[] { ("popular", "Most popular"), ("newest", "Newest"), ("price-asc", "Price: low to high"), ("price-desc", "Price: high to low"), ("name", "Name A–Z") })
+                        {
+                            <option value="@Link(sort: val)" selected="@(Model.Sort == val)">@label</option>
+                        }
+                    </select>
+                </div>
+            </div>
+
+            @if (Model.Products.Count == 0)
+            {
+                <div class="card empty-state"><div class="icon">🔍</div><h4>No dishes found</h4><p class="text-muted">Try a different search or remove some filters.</p><a href="/menu" class="btn btn-primary">See the full menu</a></div>
+            }
+            else
+            {
+                <div class="row g-4">
+                    @foreach (var p in Model.Products)
+                    {
+                        <div class="col-6 col-md-4"><partial name="_ProductCard" model="p" /></div>
+                    }
+                </div>
+                @if (Model.TotalPages > 1)
+                {
+                    <nav class="mt-5">
+                        <ul class="pagination justify-content-center">
+                            <li class="page-item @(Model.Page <= 1 ? "disabled" : "")"><a class="page-link" href="@Link(page: Model.Page - 1)"><i class="bi bi-chevron-left"></i></a></li>
+                            @for (int i = 1; i <= Model.TotalPages; i++)
+                            {
+                                <li class="page-item @(i == Model.Page ? "active" : "")"><a class="page-link" href="@Link(page: i)">@i</a></li>
+                            }
+                            <li class="page-item @(Model.Page >= Model.TotalPages ? "disabled" : "")"><a class="page-link" href="@Link(page: Model.Page + 1)"><i class="bi bi-chevron-right"></i></a></li>
+                        </ul>
+                    </nav>
+                }
+            }
+        </div>
+    </div>
+</div>

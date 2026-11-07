@@ -1,0 +1,40 @@
+@model ProductAttribute
+@{ ViewData["Title"] = Model.Id == 0 ? "New Attribute" : "Edit Attribute"; }
+<div class="toolbar"><a href="/attributes" class="btn btn-light btn-sm"><i class="bi bi-arrow-left"></i> Attributes</a></div>
+<div class="card" style="max-width:760px">
+    <div class="card-body">
+        <form method="post" action="/attributes/save">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <div asp-validation-summary="All" class="text-danger small mb-2"></div>
+            <div class="row g-3">
+                <div class="col-md-5"><label asp-for="Name" class="form-label"></label><input asp-for="Name" class="form-control" placeholder="e.g. Size" /></div>
+                <div class="col-md-4"><label asp-for="InputType" class="form-label">Customer can</label>
+                    <select asp-for="InputType" class="form-select">
+                        <option value="@AttributeInputType.SingleSelect">Choose one value</option>
+                        <option value="@AttributeInputType.MultiSelect">Choose many values</option>
+                    </select></div>
+                <div class="col-md-3"><label asp-for="SortOrder" class="form-label">Sort order</label><input asp-for="SortOrder" class="form-control" /></div>
+                <div class="col-12 form-check ms-2"><input asp-for="IsRequired" class="form-check-input" /><label asp-for="IsRequired" class="form-check-label">Required (only for "choose one")</label></div>
+            </div>
+            <h6 class="mt-4">Values</h6>
+            <div id="values">
+                @foreach (var v in Model.Values)
+                {
+                    <div class="input-group mb-2 value-row"><input type="hidden" name="valueIds" value="@v.Id" /><input name="valueNames" value="@v.Value" class="form-control" /><button type="button" class="btn btn-outline-danger remove-value"><i class="bi bi-x"></i></button></div>
+                }
+            </div>
+            <button type="button" class="btn btn-sm btn-light" id="addValue"><i class="bi bi-plus"></i> Add value</button>
+            <hr />
+            <button class="btn btn-primary"><i class="bi bi-save"></i> Save</button>
+        </form>
+    </div>
+</div>
+@section Scripts {
+    <script>
+        function addRow() { $('#values').append('<div class="input-group mb-2 value-row"><input type="hidden" name="valueIds" value="0" /><input name="valueNames" class="form-control" placeholder="Value" /><button type="button" class="btn btn-outline-danger remove-value"><i class="bi bi-x"></i></button></div>'); }
+        $('#addValue').on('click', addRow);
+        $(document).on('click', '.remove-value', function () { $(this).closest('.value-row').remove(); });
+        if (!$('#values .value-row').length) { addRow(); addRow(); }
+    </script>
+}

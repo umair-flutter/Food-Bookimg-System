@@ -1,0 +1,25 @@
+@model ProfileViewModel
+<div class="page-hero"><div class="container"><h1>Profile &amp; address</h1></div></div>
+<div class="container py-5">
+    <div class="row g-4">
+        <div class="col-lg-3"><partial name="_AccountNav" /></div>
+        <div class="col-lg-9">
+            <div class="card p-4">
+                <form method="post" action="/account/profile">
+                    @Html.AntiForgeryToken()
+                    <div class="row g-3">
+                        <div class="col-md-6"><label asp-for="FirstName" class="form-label"></label><input asp-for="FirstName" class="form-control" /><span asp-validation-for="FirstName" class="text-danger small"></span></div>
+                        <div class="col-md-6"><label asp-for="LastName" class="form-label"></label><input asp-for="LastName" class="form-control" /></div>
+                        <div class="col-md-6"><label class="form-label">Email</label><input value="@Model.Email" class="form-control" disabled /></div>
+                        <div class="col-md-6"><label asp-for="Phone" class="form-label"></label><input asp-for="Phone" class="form-control" /><span asp-validation-for="Phone" class="text-danger small"></span></div>
+                        <div class="col-12"><label asp-for="Address" class="form-label">Default delivery address</label><input asp-for="Address" class="form-control" /></div>
+                        <div class="col-md-6"><label asp-for="City" class="form-label"></label><input asp-for="City" class="form-control" /></div>
+                        <div class="col-md-6"><label asp-for="PostalCode" class="form-label"></label><input asp-for="PostalCode" class="form-control" /></div>
+                    </div>
+                    <button class="btn btn-primary mt-4">Save changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

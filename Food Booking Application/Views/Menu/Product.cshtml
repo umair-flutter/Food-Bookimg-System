@@ -1,0 +1,176 @@
+@model ProductViewModel
+@{
+    var s = await Site.SettingsAsync();
+    var p = Model.Product;
+    var images = p.Images.Count > 0 ? p.Images.Select(i => i.Url).ToList() : new List<string> { "/img/no-image.svg" };
+}
+
+<div class="container py-4">
+    <nav><ol class="breadcrumb small">
+        <li class="breadcrumb-item"><a href="/">Home</a></li>
+        <li class="breadcrumb-item"><a href="/menu">Menu</a></li>
+        <li class="breadcrumb-item"><a href="/category/@p.Category!.Slug">@p.Category.Name</a></li>
+        <li class="breadcrumb-item active">@p.Name</li>
+    </ol></nav>
+
+    <div class="row g-5">
+        <div class="col-lg-6">
+            <div class="gallery-main">
+                <img id="mainImage" src="@images[0]" alt="@p.Name" />
+                <div class="zoom-lens" style="background-image:url('@images[0]')"></div>
+            </div>
+            @if (images.Count > 1)
+            {
+                <div class="gallery-thumbs">
+                    @for (int i = 0; i < images.Count; i++)
+                    {
+                        <img src="@images[i]" data-full="@images[i]" class="@(i == 0 ? "active" : "")" alt="@p.Name image @(i + 1)" />
+                    }
+                </div>
+            }
+        </div>
+
+        <div class="col-lg-6">
+            <div class="d-flex flex-wrap gap-2 mb-2">
+                @foreach (var t in p.ProductTags.Where(t => t.Tag!.IsActive))
+                {
+                    <a href="/tag/@t.Tag!.Slug" class="badge rounded-pill text-decoration-none" style="background:@t.Tag.BadgeColor">@t.Tag.Name</a>
+                }
+                @if (p.IsVegetarian) { <span class="badge rounded-pill bg-success">🌱 Vegetarian</span> }
+                @if (p.IsSpicy) { <span class="badge rounded-pill bg-danger">🌶️ Spicy</span> }
+            </div>
+            <h1 class="fw-bold">@p.Name</h1>
+            <p class="text-muted fs-6">@p.ShortDescription</p>
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <span class="detail-price" data-detail-price>@p.SellingPrice.Money(s.CurrencySymbol)</span>
+                @if (p.OnSale)
+                {
+                    <del class="text-muted fs-5">@p.Price.Money(s.CurrencySymbol)</del>
+                    <span class="badge bg-warning text-dark">Save @((p.Price - p.SellingPrice).Money(s.CurrencySymbol))</span>
+                }
+            </div>
+            <ul class="meta-list mb-4 d-flex flex-wrap gap-4">
+                <li><i class="bi bi-clock me-1"></i> <b>@p.PrepTimeMinutes min</b> prep</li>
+                <li><i class="bi bi-grid me-1"></i> <a href="/category/@p.Category.Slug">@p.Category.Name</a></li>
+                @if (p.Brand != null) { <li><i class="bi bi-shop me-1"></i> <a href="/brand/@p.Brand.Slug">@p.Brand.Name</a></li> }
+                @if (!string.IsNullOrEmpty(p.Sku)) { <li>SKU: <b>@p.Sku</b></li> }
+            </ul>
+
+            <form id="productForm" data-base="@p.SellingPrice.ToString(System.Globalization.CultureInfo.InvariantCulture)">
+                <input type="hidden" name="productId" value="@p.Id" />
+                @foreach (var g in Model.OptionGroups)
+                {
+                    var single = g.Key.InputType == AttributeInputType.SingleSelect;
+                    var hasDefault = g.Any(o => o.IsDefault);
+                    <div class="option-group">
+                        <div class="d-flex justify-content-between mb-2">
+                            <strong>@g.Key.Name</strong>
+                            <span class="badge @(g.Key.IsRequired ? "bg-danger" : "bg-light text-dark")">@(g.Key.IsRequired ? "Required" : single ? "Optional" : "Choose any")</span>
+                        </div>
+                        @{ var first = true; }
+                        @foreach (var o in g)
+                        {
+                            var id = "opt" + o.Id;
+                            var check = o.IsDefault || (single && g.Key.IsRequired && !hasDefault && first);
+                            first = false;
+                            <div class="form-check">
+                                <input class="form-check-input" type="@(single ? "radio" : "checkbox")" name="optionIds" value="@o.Id" id="@id"
+                                       data-adj="@o.PriceAdjustment.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                       @(check ? "checked" : "") @(single && g.Key.IsRequired ? "required" : "") data-group="@g.Key.Id" />
+                                <label class="form-check-label flex-grow-1 d-flex justify-content-between" for="@id">
+                                    <span>@o.AttributeValue!.Value</span>
+                                    @if (o.PriceAdjustment != 0) { <span class="text-muted small">@(o.PriceAdjustment > 0 ? "+" : "")@o.PriceAdjustment.Money(s.CurrencySymbol)</span> }
+                                </label>
+                            </div>
+                        }
+                    </div>
+                }
+                <div class="mb-3">
+                    <label class="form-label small text-muted" for="instructions">Special instructions (optional)</label>
+                    <input class="form-control" id="instructions" name="instructions" maxlength="200" placeholder="e.g. no onions, extra sauce" />
+                </div>
+                @if (p.InStock)
+                {
+                    <div class="d-flex align-items-center gap-3 flex-wrap">
+                        <div class="qty">
+                            <button type="button" data-step="-1">−</button>
+                            <input type="number" name="quantity" value="1" min="1" max="@(p.TrackStock ? Math.Min(50, p.StockQuantity) : 50)" />
+                            <button type="button" data-step="1">+</button>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg flex-grow-1">
+                            <i class="bi bi-bag-plus me-1"></i> Add to cart · <span data-detail-total>@p.SellingPrice.Money(s.CurrencySymbol)</span>
+                        </button>
+                    </div>
+                    @if (p.TrackStock && p.StockQuantity <= 10) { <p class="text-danger small mt-2"><i class="bi bi-fire"></i> Only @p.StockQuantity left!</p> }
+                }
+                else
+                {
+                    <div class="alert alert-secondary">Sorry, this item is currently sold out.</div>
+                }
+            </form>
+
+            <div class="d-flex gap-4 mt-4 small text-muted">
+                <span><i class="bi bi-truck me-1"></i>Free delivery over @s.FreeDeliveryAbove.Money(s.CurrencySymbol)</span>
+                <span><i class="bi bi-shield-check me-1"></i>Secure checkout</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mt-4">
+        <div class="col-lg-@(Model.SideBanners.Count > 0 ? "9" : "12")">
+            <div class="card p-4">
+                <ul class="nav nav-pills mb-3 gap-2">
+                    <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-desc">Description</button></li>
+                    @if (p.Specifications.Count > 0) { <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-spec">Specifications</button></li> }
+                </ul>
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="tab-desc">@Html.Raw(p.Description)</div>
+                    <div class="tab-pane fade" id="tab-spec">
+                        <table class="table table-striped mb-0">
+                            @foreach (var sp in p.Specifications) { <tr><th style="width:40%">@sp.Name</th><td>@sp.Value</td></tr> }
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @if (Model.SideBanners.Count > 0)
+        {
+            <div class="col-lg-3">
+                @foreach (var b in Model.SideBanners)
+                {
+                    <a class="side-banner mb-3" href="@(b.LinkUrl ?? "#")">
+                        <img src="@b.ImageUrl" alt="@b.Title" />
+                        <div class="cap"><h5 class="text-white mb-0">@b.Title</h5><small>@b.SubTitle</small></div>
+                    </a>
+                }
+            </div>
+        }
+    </div>
+
+    @if (Model.Related.Count > 0)
+    {
+        <h3 class="mt-5 mb-4">You may also like</h3>
+        <div class="row g-4">
+            @foreach (var r in Model.Related) { <div class="col-6 col-lg-3"><partial name="_ProductCard" model="r" /></div> }
+        </div>
+    }
+
+    @if (Model.RecentlyViewed.Count > 0)
+    {
+        <h3 class="mt-5 mb-4">Recently viewed</h3>
+        <div class="row g-4">
+            @foreach (var r in Model.RecentlyViewed) { <div class="col-6 col-md-4 col-lg-2"><partial name="_ProductCard" model="r" /></div> }
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script type="application/ld+json">
+        @Html.Raw(System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, object?>
+        {
+            ["@context"] = "https://schema.org", ["@type"] = "Product", ["name"] = p.Name, ["image"] = images,
+            ["description"] = p.ShortDescription, ["sku"] = p.Sku,
+            ["offers"] = new Dictionary<string, object> { ["@type"] = "Offer", ["priceCurrency"] = s.CurrencyCode, ["price"] = p.SellingPrice, ["availability"] = p.InStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock" }
+        }).Replace("</", "<\\/"))
+    </script>
+}

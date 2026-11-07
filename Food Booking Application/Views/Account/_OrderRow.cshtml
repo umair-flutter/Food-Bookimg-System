@@ -1,0 +1,10 @@
+@model Order
+@{ var s = await Site.SettingsAsync(); }
+<tr>
+    <td><a href="/account/orders/@Model.OrderNumber" class="fw-semibold">#@Model.OrderNumber</a></td>
+    <td class="small">@Model.CreatedAt.ToLocalTime().ToString("MMM d, yyyy h:mm tt")</td>
+    <td class="small">@Model.OrderType</td>
+    <td><span class="badge bg-@Model.Status.StatusBadge()">@Model.Status.StatusText()</span></td>
+    <td class="fw-semibold">@Model.Total.Money(s.CurrencySymbol)</td>
+    <td class="text-end"><a href="/account/orders/@Model.OrderNumber" class="btn btn-sm btn-outline-dark">View</a></td>
+</tr>

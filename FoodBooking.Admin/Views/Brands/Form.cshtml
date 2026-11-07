@@ -1,0 +1,23 @@
+@model Brand
+@{ ViewData["Title"] = Model.Id == 0 ? "New Brand" : "Edit Brand"; }
+<div class="toolbar"><a href="/brands" class="btn btn-light btn-sm"><i class="bi bi-arrow-left"></i> Brands</a></div>
+<div class="card" style="max-width:760px">
+    <div class="card-body">
+        <form method="post" action="/brands/save" enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="LogoUrl" />
+            <div asp-validation-summary="All" class="text-danger small mb-2"></div>
+            <div class="row g-3">
+                <div class="col-md-6"><label asp-for="Name" class="form-label"></label><input asp-for="Name" class="form-control" /></div>
+                <div class="col-md-4"><label asp-for="Slug" class="form-label">URL slug</label><input asp-for="Slug" class="form-control" placeholder="auto" /></div>
+                <div class="col-md-2"><label asp-for="SortOrder" class="form-label">Order</label><input asp-for="SortOrder" class="form-control" /></div>
+                <div class="col-12"><label asp-for="Description" class="form-label"></label><textarea asp-for="Description" class="form-control" rows="2"></textarea></div>
+                <div class="col-md-8"><label class="form-label">Logo</label><input type="file" name="logo" class="form-control" accept="image/*" data-preview="#prev" /></div>
+                <div class="col-md-4"><img id="prev" src="@Model.LogoUrl" class="thumb @(Model.LogoUrl == null ? "d-none" : "")" style="width:120px;height:90px" alt="" /></div>
+                <div class="col-12 form-check ms-2"><input asp-for="IsActive" class="form-check-input" /><label asp-for="IsActive" class="form-check-label">Active</label></div>
+            </div>
+            <button class="btn btn-primary mt-3"><i class="bi bi-save"></i> Save</button>
+        </form>
+    </div>
+</div>

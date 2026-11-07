@@ -1,0 +1,178 @@
+@model SiteSetting
+@{
+    string current = ViewBag.Section;
+    var meta = SettingsController.Sections.First(s => s.key == current);
+    ViewData["Title"] = meta.title;
+    string Secret(string? v) => string.IsNullOrEmpty(v) ? "not set" : "saved (••••" + (v.Length > 4 ? v[^4..] : "") + ")";
+}
+<div class="row g-3">
+    <div class="col-xl-3">
+        <div class="list-group">
+            @foreach (var s in SettingsController.Sections)
+            {
+                <a class="list-group-item list-group-item-action @(s.key == current ? "active bg-danger border-danger" : "")" href="/settings?section=@s.key"><i class="bi @s.icon me-2"></i>@s.title</a>
+            }
+        </div>
+    </div>
+    <div class="col-xl-9">
+        <div class="card">
+            <div class="card-header"><i class="bi @meta.icon me-2"></i>@meta.title</div>
+            <div class="card-body">
+                <form method="post" action="/settings/save?section=@current" enctype="multipart/form-data" autocomplete="off">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="All" class="text-danger small mb-2"></div>
+                    @switch (current)
+                    {
+                        case "logo":
+                            <div class="row g-4">
+                                @foreach (var (field, label, url, remove, hint) in new[] {
+                                    ("logo", "Header logo", Model.LogoUrl, "removeLogo", "PNG with transparent background, about 300×90 px."),
+                                    ("footerLogo", "Footer logo (light version)", Model.FooterLogoUrl, "removeFooterLogo", "Shown on the dark footer. Falls back to the header logo."),
+                                    ("favicon", "Favicon", Model.FaviconUrl, "removeFavicon", "Square PNG or ICO, 64×64 px.") })
+                                {
+                                    <div class="col-md-4">
+                                        <label class="form-label">@label</label>
+                                        <div class="border rounded p-3 mb-2 text-center bg-light" style="min-height:110px">
+                                            <img id="prev-@field" src="@url" class="@(url == null ? "d-none" : "")" style="max-width:100%;max-height:80px" alt="" />
+                                            @if (url == null) { <div class="text-muted small">No image — company name is shown instead</div> }
+                                        </div>
+                                        <input type="file" name="@field" class="form-control form-control-sm" accept="image/*" data-preview="#prev-@field" />
+                                        <div class="form-text">@hint</div>
+                                        @if (url != null) { <div class="form-check"><input type="checkbox" name="@remove" value="true" class="form-check-input" id="@remove" /><label class="form-check-label small" for="@remove">Remove</label></div> }
+                                    </div>
+                                }
+                            </div>
+                            break;
+
+                        case "company":
+                            <div class="row g-3">
+                                <div class="col-md-6"><label asp-for="CompanyName" class="form-label">Company / restaurant name</label><input asp-for="CompanyName" class="form-control" /></div>
+                                <div class="col-md-6"><label asp-for="Tagline" class="form-label"></label><input asp-for="Tagline" class="form-control" /></div>
+                                <div class="col-md-6"><label asp-for="Phone" class="form-label"></label><input asp-for="Phone" class="form-control" /></div>
+                                <div class="col-md-6"><label asp-for="Email" class="form-label"></label><input asp-for="Email" class="form-control" /></div>
+                                <div class="col-12"><label asp-for="Address" class="form-label"></label><input asp-for="Address" class="form-control" /></div>
+                                <div class="col-12"><label asp-for="AboutText" class="form-label">About text (home page)</label><textarea asp-for="AboutText" class="form-control" rows="3"></textarea></div>
+                                <div class="col-12"><label asp-for="FooterText" class="form-label">Footer text</label><input asp-for="FooterText" class="form-control" /></div>
+                                <div class="col-12"><label asp-for="AnnouncementText" class="form-label">Announcement bar (top of every page, leave empty to hide)</label><input asp-for="AnnouncementText" class="form-control" /></div>
+                                <div class="col-12"><label asp-for="MapEmbedUrl" class="form-label">Google Maps embed URL (contact page)</label><input asp-for="MapEmbedUrl" class="form-control" placeholder="https://www.google.com/maps/embed?pb=…" /></div>
+                                <div class="col-md-6"><label asp-for="TimeZoneId" class="form-label">Store time zone</label>
+                                    <select asp-for="TimeZoneId" class="form-select">
+                                        @foreach (var tz in TimeZoneInfo.GetSystemTimeZones()) { <option value="@tz.Id">@tz.DisplayName</option> }
+                                    </select>
+                                    <div class="form-text">Used for opening hours and holidays.</div></div>
+                                <div class="col-md-6"><label asp-for="FrontSiteUrl" class="form-label">Website URL</label><input asp-for="FrontSiteUrl" class="form-control" /><div class="form-text">Used in emails and the "View website" button.</div></div>
+                            </div>
+                            break;
+
+                        case "seo":
+                            <div class="row g-3">
+                                <div class="col-12"><label asp-for="MetaTitle" class="form-label">Home page title</label><input asp-for="MetaTitle" class="form-control" maxlength="200" /><div class="form-text">Shown in Google results and the browser tab. Aim for 50–60 characters.</div></div>
+                                <div class="col-12"><label asp-for="MetaDescription" class="form-label">Meta description</label><textarea asp-for="MetaDescription" class="form-control" rows="3" maxlength="500"></textarea><div class="form-text">Aim for 150–160 characters.</div></div>
+                                <div class="col-12"><label asp-for="MetaKeywords" class="form-label">Meta keywords</label><input asp-for="MetaKeywords" class="form-control" /></div>
+                                <div class="col-12"><label asp-for="HeadScripts" class="form-label">Extra &lt;head&gt; code (Google Analytics, verification tags…)</label><textarea asp-for="HeadScripts" class="form-control font-monospace" rows="5"></textarea><div class="form-text text-warning">Inserted as-is into every page. Only paste code from sources you trust.</div></div>
+                                <div class="col-12 small text-muted">Each product, category and CMS page also has its own meta title/description fields.</div>
+                            </div>
+                            break;
+
+                        case "social":
+                            <div class="row g-3">
+                                @foreach (var (f, label, icon) in new[] { ("FacebookUrl", "Facebook", "facebook"), ("InstagramUrl", "Instagram", "instagram"), ("TwitterUrl", "X / Twitter", "twitter-x"), ("YoutubeUrl", "YouTube", "youtube"), ("LinkedinUrl", "LinkedIn", "linkedin"), ("TiktokUrl", "TikTok", "tiktok") })
+                                {
+                                    var val = typeof(SiteSetting).GetProperty(f)!.GetValue(Model) as string;
+                                    <div class="col-md-6"><label class="form-label"><i class="bi bi-@icon me-1"></i>@label</label><input name="@f" value="@val" class="form-control" placeholder="https://" /></div>
+                                }
+                                <div class="col-md-6"><label asp-for="WhatsappNumber" class="form-label"><i class="bi bi-whatsapp me-1"></i>WhatsApp number (floating chat button)</label><input asp-for="WhatsappNumber" class="form-control" placeholder="+15551234567" /></div>
+                                <div class="col-12 small text-muted">Leave a field empty to hide that icon on the website.</div>
+                            </div>
+                            break;
+
+                        case "ordering":
+                            <div class="row g-3">
+                                <div class="col-md-3"><label asp-for="CurrencySymbol" class="form-label">Currency symbol</label><input asp-for="CurrencySymbol" class="form-control" /></div>
+                                <div class="col-md-3"><label asp-for="CurrencyCode" class="form-label">Currency code</label><input asp-for="CurrencyCode" class="form-control" placeholder="USD" /></div>
+                                <div class="col-md-3"><label asp-for="TaxPercent" class="form-label">Tax %</label><input asp-for="TaxPercent" class="form-control" step="0.01" /></div>
+                                <div class="col-md-3"><label asp-for="MinOrderAmount" class="form-label">Minimum order</label><input asp-for="MinOrderAmount" class="form-control" step="0.01" /></div>
+                                <div class="col-md-6"><label asp-for="DeliveryCharge" class="form-label">Delivery charge</label><input asp-for="DeliveryCharge" class="form-control" step="0.01" /></div>
+                                <div class="col-md-6"><label asp-for="FreeDeliveryAbove" class="form-label">Free delivery above (0 = never)</label><input asp-for="FreeDeliveryAbove" class="form-control" step="0.01" /></div>
+                                <div class="col-12">
+                                    <div class="form-check form-switch"><input asp-for="EnableDelivery" class="form-check-input" /><label asp-for="EnableDelivery" class="form-check-label">Offer delivery</label></div>
+                                    <div class="form-check form-switch"><input asp-for="EnablePickup" class="form-check-input" /><label asp-for="EnablePickup" class="form-check-label">Offer pickup</label></div>
+                                    <div class="form-check form-switch"><input asp-for="EnableGuestCheckout" class="form-check-input" /><label asp-for="EnableGuestCheckout" class="form-check-label">Allow guest checkout (no account needed)</label></div>
+                                    <div class="form-check form-switch"><input asp-for="EnableTips" class="form-check-input" /><label asp-for="EnableTips" class="form-check-label">Let customers add a tip</label></div>
+                                </div>
+                            </div>
+                            break;
+
+                        case "payments":
+                            <div class="alert @(Model.PaymentTestMode ? "alert-warning" : "alert-success") small">
+                                @if (Model.PaymentTestMode) { <span><i class="bi bi-cone-striped"></i> <strong>Demo / test mode is ON.</strong> Card and PayPal orders are simulated (marked Paid with a TEST- transaction id) and no money is charged. Turn it off once real keys are entered.</span> }
+                                else { <span><i class="bi bi-shield-check"></i> <strong>Live mode.</strong> Card payments go through Clover and PayPal payments through PayPal.</span> }
+                            </div>
+                            <div class="form-check form-switch mb-3"><input asp-for="PaymentTestMode" class="form-check-input" /><label asp-for="PaymentTestMode" class="form-check-label fw-semibold">Demo / test mode (simulate card &amp; PayPal payments)</label></div>
+                            <h6>Payment methods</h6>
+                            <div class="form-check form-switch"><input asp-for="EnableCashOnDelivery" class="form-check-input" /><label asp-for="EnableCashOnDelivery" class="form-check-label">Cash on delivery / pay at pickup</label></div>
+                            <div class="form-check form-switch"><input asp-for="EnableCreditCard" class="form-check-input" /><label asp-for="EnableCreditCard" class="form-check-label">Credit / debit card (Clover payment gateway)</label></div>
+                            <div class="form-check form-switch mb-3"><input asp-for="EnablePaypal" class="form-check-input" /><label asp-for="EnablePaypal" class="form-check-label">PayPal</label></div>
+                            <div class="row g-3">
+                                <div class="col-12"><h6 class="mb-0 mt-2">Clover e-commerce (cards)</h6><div class="form-text">From your Clover dashboard → Settings → Ecommerce → API Tokens. Sandbox/live follows the Clover POS setting.</div></div>
+                                <div class="col-md-6"><label asp-for="CloverEcommercePublicKey" class="form-label">Public key (PAKMS / apiAccessKey)</label><input asp-for="CloverEcommercePublicKey" class="form-control" /></div>
+                                <div class="col-md-6"><label class="form-label">Private token <small class="text-muted">(@Secret(Model.CloverEcommercePrivateKey))</small></label><input type="password" name="cloverPrivateKey" class="form-control" placeholder="leave empty to keep" autocomplete="new-password" /></div>
+                                <div class="col-12"><h6 class="mb-0 mt-2">PayPal</h6><div class="form-text">From developer.paypal.com → Apps &amp; Credentials.</div></div>
+                                <div class="col-md-6"><label asp-for="PaypalClientId" class="form-label">Client ID</label><input asp-for="PaypalClientId" class="form-control" /></div>
+                                <div class="col-md-6"><label class="form-label">Secret <small class="text-muted">(@Secret(Model.PaypalSecret))</small></label><input type="password" name="paypalSecret" class="form-control" placeholder="leave empty to keep" autocomplete="new-password" /></div>
+                                <div class="col-12 form-check form-switch ms-2"><input asp-for="PaypalSandbox" class="form-check-input" /><label asp-for="PaypalSandbox" class="form-check-label">PayPal sandbox (testing)</label></div>
+                            </div>
+                            break;
+
+                        case "clover":
+                            <p class="text-muted small">When enabled, every website order is created in your Clover POS immediately as an open order (with items, options, notes, delivery fee and tip) and a print event is sent so it prints in the kitchen. You can also re-send any order from its order page.</p>
+                            <div class="form-check form-switch"><input asp-for="CloverEnabled" class="form-check-input" /><label asp-for="CloverEnabled" class="form-check-label fw-semibold">Send website orders to Clover POS</label></div>
+                            <div class="form-check form-switch"><input asp-for="CloverPrintToKitchen" class="form-check-input" /><label asp-for="CloverPrintToKitchen" class="form-check-label">Print order on the kitchen/order printer</label></div>
+                            <div class="form-check form-switch mb-3"><input asp-for="CloverSandbox" class="form-check-input" /><label asp-for="CloverSandbox" class="form-check-label">Sandbox environment (sandbox.dev.clover.com)</label></div>
+                            <div class="row g-3">
+                                <div class="col-md-6"><label asp-for="CloverMerchantId" class="form-label">Merchant ID</label><input asp-for="CloverMerchantId" class="form-control" /></div>
+                                <div class="col-md-6"><label class="form-label">API token <small class="text-muted">(@Secret(Model.CloverApiToken))</small></label><input type="password" name="cloverApiToken" class="form-control" placeholder="leave empty to keep" autocomplete="new-password" /><div class="form-text">Needs Orders read/write permission.</div></div>
+                            </div>
+                            break;
+
+                        case "notifications":
+                            <h6>Email (SMTP)</h6>
+                            <div class="form-check form-switch mb-2"><input asp-for="EmailEnabled" class="form-check-input" /><label asp-for="EmailEnabled" class="form-check-label">Send emails (order confirmation/invoice, status updates, password reset)</label></div>
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-5"><label asp-for="SmtpHost" class="form-label">SMTP host</label><input asp-for="SmtpHost" class="form-control" placeholder="smtp.gmail.com" /></div>
+                                <div class="col-md-2"><label asp-for="SmtpPort" class="form-label">Port</label><input asp-for="SmtpPort" class="form-control" /></div>
+                                <div class="col-md-5 d-flex align-items-end"><div class="form-check"><input asp-for="SmtpUseSsl" class="form-check-input" /><label asp-for="SmtpUseSsl" class="form-check-label">Use SSL/TLS</label></div></div>
+                                <div class="col-md-6"><label asp-for="SmtpUser" class="form-label">Username</label><input asp-for="SmtpUser" class="form-control" autocomplete="off" /></div>
+                                <div class="col-md-6"><label class="form-label">Password <small class="text-muted">(@Secret(Model.SmtpPassword))</small></label><input type="password" name="smtpPassword" class="form-control" placeholder="leave empty to keep" autocomplete="new-password" /></div>
+                                <div class="col-md-6"><label asp-for="SmtpFromEmail" class="form-label">From address</label><input asp-for="SmtpFromEmail" class="form-control" /></div>
+                                <div class="col-md-6"><label asp-for="AdminAlertEmail" class="form-label">New-order alerts to (email)</label><input asp-for="AdminAlertEmail" class="form-control" /></div>
+                            </div>
+                            <h6>SMS (Twilio)</h6>
+                            <div class="form-check form-switch mb-2"><input asp-for="SmsEnabled" class="form-check-input" /><label asp-for="SmsEnabled" class="form-check-label">Send SMS on successful orders and status changes</label></div>
+                            <div class="row g-3">
+                                <div class="col-md-6"><label asp-for="TwilioAccountSid" class="form-label">Account SID</label><input asp-for="TwilioAccountSid" class="form-control" /></div>
+                                <div class="col-md-6"><label class="form-label">Auth token <small class="text-muted">(@Secret(Model.TwilioAuthToken))</small></label><input type="password" name="twilioAuthToken" class="form-control" placeholder="leave empty to keep" autocomplete="new-password" /></div>
+                                <div class="col-md-6"><label asp-for="TwilioFromNumber" class="form-label">From number</label><input asp-for="TwilioFromNumber" class="form-control" placeholder="+15551234567" /></div>
+                                <div class="col-md-6"><label asp-for="AdminAlertPhone" class="form-label">New-order SMS alerts to (kitchen/manager phone)</label><input asp-for="AdminAlertPhone" class="form-control" /></div>
+                            </div>
+                            break;
+                    }
+                    <button class="btn btn-primary mt-4"><i class="bi bi-save"></i> Save settings</button>
+                </form>
+
+                @if (current == "notifications")
+                {
+                    <hr />
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <form method="post" action="/settings/testemail" class="input-group">@Html.AntiForgeryToken()<input type="email" name="to" class="form-control" placeholder="Send test email to…" required /><button class="btn btn-outline-dark">Test email</button></form>
+                        </div>
+                        <div class="col-md-6">
+                            <form method="post" action="/settings/testsms" class="input-group">@Html.AntiForgeryToken()<input name="to" class="form-control" placeholder="Send test SMS to +1…" required /><button class="btn btn-outline-dark">Test SMS</button></form>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

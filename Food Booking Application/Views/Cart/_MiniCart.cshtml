@@ -1,0 +1,46 @@
+@model CartSummary
+@{ var s = await Site.SettingsAsync(); }
+@if (Model.Lines.Count == 0)
+{
+    <div class="empty-state"><div class="icon">🛒</div><h5>Your cart is empty</h5><p class="text-muted">Add something delicious!</p><a href="/menu" class="btn btn-primary">Browse menu</a></div>
+}
+else
+{
+    <div class="d-flex flex-column h-100">
+        <div class="flex-grow-1 overflow-auto">
+            @foreach (var l in Model.Lines)
+            {
+                <div class="mini-item" data-line="@l.Line.Key">
+                    <img src="@l.Product.MainImage" alt="" />
+                    <div class="flex-grow-1">
+                        <a href="/product/@l.Product.Slug" class="fw-semibold text-dark text-decoration-none">@l.Product.Name</a>
+                        @if (!string.IsNullOrEmpty(l.OptionsText)) { <div class="small text-muted">@l.OptionsText</div> }
+                        @if (l.Problem != null) { <div class="small text-danger">@l.Problem</div> }
+                        <div class="d-flex justify-content-between align-items-center mt-1">
+                            <div class="qty qty-sm">
+                                <button type="button" data-step="-1">−</button>
+                                <input type="number" value="@l.Line.Quantity" min="0" data-cart-qty="@l.Line.Key" />
+                                <button type="button" data-step="1">+</button>
+                            </div>
+                            <strong data-line-total="@l.Line.Key">@l.LineTotal.Money(s.CurrencySymbol)</strong>
+                        </div>
+                    </div>
+                    <button class="btn btn-sm text-muted align-self-start" data-cart-remove="@l.Line.Key" title="Remove"><i class="bi bi-x-lg"></i></button>
+                </div>
+            }
+        </div>
+        <div class="p-3 border-top bg-light">
+            <div class="summary-row"><span>Subtotal</span><strong data-sum="subtotal">@Model.SubTotal.Money(s.CurrencySymbol)</strong></div>
+            @if (s.FreeDeliveryAbove > 0 && Model.SubTotal < s.FreeDeliveryAbove)
+            {
+                var pct = (int)(Model.SubTotal / s.FreeDeliveryAbove * 100);
+                <small class="text-muted">Add @((s.FreeDeliveryAbove - Model.SubTotal).Money(s.CurrencySymbol)) more for free delivery</small>
+                <div class="progress my-2" style="height:6px"><div class="progress-bar bg-primary" style="width:@pct%"></div></div>
+            }
+            <div class="d-grid gap-2 mt-2">
+                <a href="/checkout" class="btn btn-primary">Checkout</a>
+                <a href="/cart" class="btn btn-outline-dark">View cart</a>
+            </div>
+        </div>
+    </div>
+}

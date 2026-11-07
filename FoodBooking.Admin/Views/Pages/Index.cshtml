@@ -1,0 +1,30 @@
+@model List<CmsPage>
+@{ ViewData["Title"] = "CMS Pages"; }
+<div class="toolbar">
+    <span class="text-muted small">Static pages such as About Us, Terms &amp; Conditions or Privacy Policy, shown at /page/slug.</span>
+    <a href="/pages/create" class="btn btn-primary btn-sm ms-auto"><i class="bi bi-plus-lg"></i> New page</a>
+</div>
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead><tr><th>Title</th><th>URL</th><th>Header</th><th>Footer</th><th>Order</th><th>Status</th><th class="text-end">Actions</th></tr></thead>
+            <tbody>
+                @foreach (var p in Model)
+                {
+                    <tr>
+                        <td><a href="/pages/edit/@p.Id" class="fw-semibold">@p.Title</a></td>
+                        <td class="small text-muted">/page/@p.Slug</td>
+                        <td>@if (p.ShowInHeader) { <i class="bi bi-check-lg text-success"></i> }</td>
+                        <td>@if (p.ShowInFooter) { <i class="bi bi-check-lg text-success"></i> }</td>
+                        <td>@p.SortOrder</td>
+                        <td>@if (p.IsActive) { <span class="badge bg-success">Published</span> } else { <span class="badge bg-secondary">Draft</span> }</td>
+                        <td class="text-end text-nowrap">
+                            <a href="/pages/edit/@p.Id" class="btn btn-sm btn-light"><i class="bi bi-pencil"></i></a>
+                            <form method="post" action="/pages/delete/@p.Id" class="d-inline" data-confirm="Delete page @p.Title?">@Html.AntiForgeryToken()<button class="btn btn-sm btn-light text-danger"><i class="bi bi-trash"></i></button></form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

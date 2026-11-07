@@ -1,0 +1,78 @@
+@model CartSummary
+@{
+    var s = await Site.SettingsAsync();
+    var banners = (List<Banner>)ViewBag.Banners;
+}
+<div class="page-hero"><div class="container"><h1>Your Cart</h1><nav><ol class="breadcrumb"><li class="breadcrumb-item"><a href="/">Home</a></li><li class="breadcrumb-item active">Cart</li></ol></nav></div></div>
+
+<div class="container py-5">
+    @if (Model.Lines.Count == 0)
+    {
+        <div class="card empty-state"><div class="icon">🛒</div><h3>Your cart is empty</h3><p class="text-muted">Looks like you haven't added anything yet.</p><a href="/menu" class="btn btn-primary btn-lg">Browse the menu</a></div>
+    }
+    else
+    {
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="card p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">@Model.Count item(s)</h5>
+                        <form method="post" action="/cart/clear">@Html.AntiForgeryToken()<button class="btn btn-sm btn-link text-danger" onclick="return confirm('Remove all items from your cart?')"><i class="bi bi-trash"></i> Clear cart</button></form>
+                    </div>
+                    @foreach (var l in Model.Lines)
+                    {
+                        <div class="cart-item" data-line="@l.Line.Key">
+                            <img src="@l.Product.MainImage" alt="" />
+                            <div class="flex-grow-1">
+                                <a href="/product/@l.Product.Slug" class="fw-semibold text-dark text-decoration-none">@l.Product.Name</a>
+                                @if (!string.IsNullOrEmpty(l.OptionsText)) { <div class="opts">@l.OptionsText</div> }
+                                <div class="small text-muted">@l.UnitPrice.Money(s.CurrencySymbol) each</div>
+                                @if (l.Problem != null) { <div class="small text-danger fw-semibold">@l.Problem</div> }
+                            </div>
+                            <div class="qty">
+                                <button type="button" data-step="-1">−</button>
+                                <input type="number" value="@l.Line.Quantity" min="0" data-cart-qty="@l.Line.Key" />
+                                <button type="button" data-step="1">+</button>
+                            </div>
+                            <strong class="text-end" style="min-width:80px" data-line-total="@l.Line.Key">@l.LineTotal.Money(s.CurrencySymbol)</strong>
+                            <button class="btn btn-sm text-muted" data-cart-remove="@l.Line.Key" title="Remove"><i class="bi bi-trash"></i></button>
+                        </div>
+                    }
+                    <a href="/menu" class="btn btn-link mt-3 ps-0"><i class="bi bi-arrow-left"></i> Continue shopping</a>
+                </div>
+                @foreach (var b in banners)
+                {
+                    <a class="promo-banner mt-4" style="min-height:140px;background-image:url('@b.ImageUrl')" href="@(b.LinkUrl ?? "#")"><div><h4 class="text-white">@b.Title</h4><p class="mb-0">@b.SubTitle</p></div></a>
+                }
+            </div>
+            <div class="col-lg-4">
+                <div class="card p-4 position-sticky" style="top:100px">
+                    <h5>Order summary</h5>
+                    @if (Model.Coupon == null)
+                    {
+                        <form id="couponForm" class="input-group my-3">
+                            <input name="code" class="form-control" placeholder="Coupon code" style="text-transform:uppercase" />
+                            <button class="btn btn-dark">Apply</button>
+                        </form>
+                        <small class="d-block mb-2 @(Model.CouponMessage != null ? "text-danger" : "")" data-coupon-msg>@Model.CouponMessage</small>
+                    }
+                    else
+                    {
+                        <div class="alert alert-success d-flex justify-content-between align-items-center py-2 my-3">
+                            <span><i class="bi bi-ticket-perforated"></i> <strong>@Model.Coupon.Code</strong> applied</span>
+                            <button class="btn btn-sm btn-link text-danger" data-remove-coupon>Remove</button>
+                        </div>
+                    }
+                    <div class="summary-row"><span>Subtotal</span><span data-sum="subtotal">@Model.SubTotal.Money(s.CurrencySymbol)</span></div>
+                    <div class="summary-row text-success @(Model.Discount > 0 ? "" : "d-none")" data-row="discount"><span>Discount</span><span data-sum="discount">-@Model.Discount.Money(s.CurrencySymbol)</span></div>
+                    @if (Model.TaxPercent > 0) { <div class="summary-row"><span>Tax (@Model.TaxPercent.ToString("0.##")%)</span><span data-sum="tax">@Model.Tax.Money(s.CurrencySymbol)</span></div> }
+                    <div class="summary-row text-muted small"><span>Delivery</span><span>calculated at checkout</span></div>
+                    <div class="summary-row summary-total"><span>Estimated total</span><span data-sum="total">@Model.Total.Money(s.CurrencySymbol)</span></div>
+                    <div class="alert alert-warning small mt-3 @(Model.BelowMinimum ? "" : "d-none")" data-min-warning>Minimum order is @s.MinOrderAmount.Money(s.CurrencySymbol).</div>
+                    <a href="/checkout" class="btn btn-primary btn-lg w-100 mt-3 @(Model.BelowMinimum || Model.HasProblems ? "disabled" : "")" data-checkout-btn>Proceed to checkout <i class="bi bi-arrow-right"></i></a>
+                    <div class="text-center small text-muted mt-3"><i class="bi bi-lock"></i> Secure checkout · Guest checkout available</div>
+                </div>
+            </div>
+        </div>
+    }
+</div>

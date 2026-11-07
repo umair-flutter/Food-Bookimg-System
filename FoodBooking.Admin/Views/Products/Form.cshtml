@@ -1,0 +1,162 @@
+@model ProductForm
+@{
+    ViewData["Title"] = Model.Id == 0 ? "New Product" : "Edit: " + Model.Name;
+    var tags = (List<Tag>)ViewBag.Tags;
+    var attrs = (List<ProductAttribute>)ViewBag.Attributes;
+    var c = (await SettingsSvc.GetAsync()).CurrencySymbol;
+}
+@section Head { <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.css" rel="stylesheet" /> }
+<div class="toolbar">
+    <a href="/products" class="btn btn-light btn-sm"><i class="bi bi-arrow-left"></i> Products</a>
+    @if (Model.Id > 0) { <a class="btn btn-sm btn-outline-dark ms-auto" target="_blank" href="@((await SettingsSvc.GetAsync()).FrontSiteUrl)/product/@Model.Slug"><i class="bi bi-box-arrow-up-right"></i> View on website</a> }
+</div>
+<form method="post" action="/products/save" enctype="multipart/form-data">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+    <div asp-validation-summary="All" class="text-danger small mb-2"></div>
+    <div class="row g-3">
+        <div class="col-xl-8">
+            <div class="card mb-3">
+                <div class="card-header">General</div>
+                <div class="card-body row g-3">
+                    <div class="col-md-8"><label asp-for="Name" class="form-label"></label><input asp-for="Name" class="form-control" /></div>
+                    <div class="col-md-4"><label asp-for="Sku" class="form-label">SKU</label><input asp-for="Sku" class="form-control" /></div>
+                    <div class="col-12"><label asp-for="Slug" class="form-label">URL slug</label><input asp-for="Slug" class="form-control" placeholder="auto-generated from name" /></div>
+                    <div class="col-12"><label asp-for="ShortDescription" class="form-label"></label><textarea asp-for="ShortDescription" class="form-control" rows="2"></textarea></div>
+                    <div class="col-12"><label asp-for="Description" class="form-label"></label><textarea asp-for="Description" class="form-control rich"></textarea></div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header">Images</div>
+                <div class="card-body">
+                    @if (Model.Images.Count > 0)
+                    {
+                        <div class="row g-2 mb-3">
+                            @for (int i = 0; i < Model.Images.Count; i++)
+                            {
+                                var img = Model.Images[i];
+                                <div class="col-4 col-md-3">
+                                    <div class="img-tile @(i == 0 ? "main" : "")">
+                                        <img src="@img.Url" alt="" />
+                                        <div class="actions">
+                                            @if (i > 0) { <button class="btn btn-sm btn-light" formaction="/products/mainimage/@img.Id" formnovalidate title="Make main image"><i class="bi bi-star"></i></button> }
+                                            <button class="btn btn-sm btn-danger" formaction="/products/deleteimage/@img.Id" formnovalidate onclick="return confirm('Remove this image?')" title="Remove"><i class="bi bi-trash"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    <label class="form-label">Upload images (you can pick several; the first image is the main one)</label>
+                    <input type="file" name="newImages" class="form-control" accept="image/*" multiple />
+                    <div class="form-text">JPG, PNG, GIF or WEBP, up to 5 MB each.</div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header">Options &amp; add-ons <small class="text-muted fw-normal">— tick the attribute values this product offers. Manage attributes under Catalog → Attributes.</small></div>
+                <div class="card-body">
+                    @{ var idx = 0; }
+                    @foreach (var a in attrs)
+                    {
+                        <h6 class="mt-2">@a.Name <span class="badge bg-light text-dark">@(a.InputType == AttributeInputType.SingleSelect ? "choose one" : "choose many")@(a.IsRequired ? ", required" : "")</span></h6>
+                        <table class="table table-sm option-table mb-3">
+                            <thead><tr><th style="width:40px">Offer</th><th>Value</th><th style="width:170px">Price +/- (@c)</th><th style="width:80px">Default</th></tr></thead>
+                            <tbody>
+                                @foreach (var v in a.Values)
+                                {
+                                    var row = Model.Options.FirstOrDefault(o => o.AttributeValueId == v.Id) ?? new OptionRow { AttributeValueId = v.Id };
+                                    <tr>
+                                        <td><input type="hidden" name="Options[@idx].AttributeValueId" value="@v.Id" /><input type="checkbox" class="form-check-input" name="Options[@idx].Enabled" value="true" @(row.Enabled ? "checked" : "") /></td>
+                                        <td>@v.Value</td>
+                                        <td><input type="number" step="0.01" class="form-control form-control-sm" name="Options[@idx].PriceAdjustment" value="@row.PriceAdjustment.ToString(System.Globalization.CultureInfo.InvariantCulture)" /></td>
+                                        <td><input type="checkbox" class="form-check-input" name="Options[@idx].IsDefault" value="true" @(row.IsDefault ? "checked" : "") /></td>
+                                    </tr>
+                                    idx++;
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    @if (attrs.Count == 0) { <p class="text-muted mb-0">No attributes yet. <a href="/attributes/create">Create one</a>.</p> }
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header d-flex justify-content-between">Specifications <button type="button" class="btn btn-sm btn-light" id="addSpec"><i class="bi bi-plus"></i> Add row</button></div>
+                <div class="card-body" id="specs">
+                    @for (int i = 0; i < Model.Specs.Count; i++)
+                    {
+                        <div class="row g-2 mb-2 spec-row">
+                            <div class="col-5"><input name="Specs[@i].Name" value="@Model.Specs[i].Name" class="form-control form-control-sm" placeholder="e.g. Calories" /></div>
+                            <div class="col-6"><input name="Specs[@i].Value" value="@Model.Specs[i].Value" class="form-control form-control-sm" placeholder="e.g. 450 kcal" /></div>
+                            <div class="col-1"><button type="button" class="btn btn-sm btn-light text-danger remove-spec"><i class="bi bi-x"></i></button></div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">SEO</div>
+                <div class="card-body row g-3">
+                    <div class="col-12"><label asp-for="MetaTitle" class="form-label"></label><input asp-for="MetaTitle" class="form-control" /></div>
+                    <div class="col-12"><label asp-for="MetaDescription" class="form-label"></label><textarea asp-for="MetaDescription" class="form-control" rows="2"></textarea></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4">
+            <div class="card mb-3">
+                <div class="card-header">Publish</div>
+                <div class="card-body">
+                    <div class="form-check form-switch mb-2"><input asp-for="IsActive" class="form-check-input" /><label asp-for="IsActive" class="form-check-label"></label></div>
+                    <div class="mb-2"><label asp-for="SortOrder" class="form-label"></label><input asp-for="SortOrder" class="form-control" /></div>
+                    <button class="btn btn-primary w-100"><i class="bi bi-save"></i> Save product</button>
+                </div>
+            </div>
+            <div class="card mb-3">
+                <div class="card-header">Pricing &amp; stock</div>
+                <div class="card-body row g-2">
+                    <div class="col-6"><label asp-for="Price" class="form-label">Price (@c)</label><input asp-for="Price" class="form-control" step="0.01" /></div>
+                    <div class="col-6"><label asp-for="SalePrice" class="form-label">Sale price (@c)</label><input asp-for="SalePrice" class="form-control" step="0.01" /></div>
+                    <div class="col-12 form-check form-switch ms-2"><input asp-for="TrackStock" class="form-check-input" /><label asp-for="TrackStock" class="form-check-label"></label></div>
+                    <div class="col-12"><label asp-for="StockQuantity" class="form-label"></label><input asp-for="StockQuantity" class="form-control" /></div>
+                    <div class="col-12"><label asp-for="PrepTimeMinutes" class="form-label"></label><input asp-for="PrepTimeMinutes" class="form-control" /></div>
+                </div>
+            </div>
+            <div class="card mb-3">
+                <div class="card-header">Organisation</div>
+                <div class="card-body">
+                    <div class="mb-2"><label asp-for="CategoryId" class="form-label"></label><select asp-for="CategoryId" class="form-select" asp-items="ViewBag.Categories"><option value="">— choose —</option></select></div>
+                    <div class="mb-2"><label asp-for="BrandId" class="form-label"></label><select asp-for="BrandId" class="form-select" asp-items="ViewBag.Brands"><option value="">— none —</option></select></div>
+                    <label class="form-label">Tags</label>
+                    @foreach (var t in tags)
+                    {
+                        <div class="form-check"><input type="checkbox" class="form-check-input" name="TagIds" value="@t.Id" id="tag@(t.Id)" @(Model.TagIds.Contains(t.Id) ? "checked" : "") /><label class="form-check-label" for="tag@(t.Id)"><span class="badge" style="background:@t.BadgeColor">@t.Name</span></label></div>
+                    }
+                    <hr />
+                    <div class="form-check"><input asp-for="IsVegetarian" class="form-check-input" /><label asp-for="IsVegetarian" class="form-check-label"></label></div>
+                    <div class="form-check"><input asp-for="IsSpicy" class="form-check-input" /><label asp-for="IsSpicy" class="form-check-label"></label></div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">Clover POS</div>
+                <div class="card-body"><label asp-for="CloverItemId" class="form-label"></label><input asp-for="CloverItemId" class="form-control" /><div class="form-text">Optional: link to an existing Clover inventory item so web orders use it.</div></div>
+            </div>
+        </div>
+    </div>
+</form>
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.js"></script>
+    <script>
+        $('.rich').summernote({ height: 220 });
+        $('#addSpec').on('click', function () {
+            const i = $('#specs .spec-row').length;
+            $('#specs').append(`<div class="row g-2 mb-2 spec-row"><div class="col-5"><input name="Specs[${i}].Name" class="form-control form-control-sm" placeholder="Name" /></div><div class="col-6"><input name="Specs[${i}].Value" class="form-control form-control-sm" placeholder="Value" /></div><div class="col-1"><button type="button" class="btn btn-sm btn-light text-danger remove-spec"><i class="bi bi-x"></i></button></div></div>`);
+        });
+        $(document).on('click', '.remove-spec', function () {
+            $(this).closest('.spec-row').remove();
+            $('#specs .spec-row').each(function (i) { $(this).find('input').eq(0).attr('name', `Specs[${i}].Name`); $(this).find('input').eq(1).attr('name', `Specs[${i}].Value`); });
+        });
+    </script>
+}

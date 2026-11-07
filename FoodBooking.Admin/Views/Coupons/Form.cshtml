@@ -1,0 +1,28 @@
+@model Coupon
+@{ ViewData["Title"] = Model.Id == 0 ? "New Coupon" : "Edit Coupon"; }
+<div class="toolbar"><a href="/coupons" class="btn btn-light btn-sm"><i class="bi bi-arrow-left"></i> Coupons</a></div>
+<div class="card" style="max-width:760px">
+    <div class="card-body">
+        <form method="post" action="/coupons/save">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="UsedCount" />
+            <div asp-validation-summary="All" class="text-danger small mb-2"></div>
+            <div class="row g-3">
+                <div class="col-md-4"><label asp-for="Code" class="form-label"></label><input asp-for="Code" class="form-control text-uppercase" /></div>
+                <div class="col-md-8"><label asp-for="Description" class="form-label"></label><input asp-for="Description" class="form-control" /></div>
+                <div class="col-md-4"><label asp-for="DiscountType" class="form-label">Type</label>
+                    <select asp-for="DiscountType" class="form-select"><option value="@DiscountType.Percentage">Percentage (%)</option><option value="@DiscountType.FixedAmount">Fixed amount</option></select></div>
+                <div class="col-md-4"><label asp-for="Value" class="form-label"></label><input asp-for="Value" class="form-control" step="0.01" /></div>
+                <div class="col-md-4"><label asp-for="MaxDiscount" class="form-label">Max discount (optional)</label><input asp-for="MaxDiscount" class="form-control" step="0.01" /></div>
+                <div class="col-md-4"><label asp-for="MinOrderAmount" class="form-label">Minimum order</label><input asp-for="MinOrderAmount" class="form-control" step="0.01" /></div>
+                <div class="col-md-4"><label asp-for="StartsAt" class="form-label">Starts</label><input asp-for="StartsAt" type="date" class="form-control" /></div>
+                <div class="col-md-4"><label asp-for="ExpiresAt" class="form-label">Expires</label><input asp-for="ExpiresAt" type="date" class="form-control" /></div>
+                <div class="col-md-4"><label asp-for="UsageLimit" class="form-label">Usage limit (optional)</label><input asp-for="UsageLimit" class="form-control" /></div>
+                <div class="col-md-8 d-flex align-items-end"><div class="form-check"><input asp-for="IsActive" class="form-check-input" /><label asp-for="IsActive" class="form-check-label">Active</label></div>
+                    @if (Model.Id > 0) { <span class="ms-4 text-muted small">Used @Model.UsedCount time(s)</span> }</div>
+            </div>
+            <button class="btn btn-primary mt-3"><i class="bi bi-save"></i> Save</button>
+        </form>
+    </div>
+</div>

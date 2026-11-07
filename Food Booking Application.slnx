@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Food Booking Application/Food Booking Application.csproj" />
+  <Project Path="FoodBooking.Admin/FoodBooking.Admin.csproj" />
+  <Project Path="FoodBooking.Core/FoodBooking.Core.csproj" />
+</Solution>

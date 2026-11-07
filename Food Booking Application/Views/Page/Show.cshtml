@@ -1,0 +1,5 @@
+@model CmsPage
+<div class="page-hero"><div class="container"><h1>@Model.Title</h1><nav><ol class="breadcrumb"><li class="breadcrumb-item"><a href="/">Home</a></li><li class="breadcrumb-item active">@Model.Title</li></ol></nav></div></div>
+<div class="container py-5" style="max-width:960px">
+    <div class="cms-content shadow-sm">@Html.Raw(Model.Content)</div>
+</div>

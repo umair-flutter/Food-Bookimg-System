@@ -1,0 +1,31 @@
+@model List<Coupon>
+@{
+    ViewData["Title"] = "Coupons";
+    var c = (await SettingsSvc.GetAsync()).CurrencySymbol;
+}
+<div class="toolbar"><a href="/coupons/create" class="btn btn-primary btn-sm ms-auto"><i class="bi bi-plus-lg"></i> New coupon</a></div>
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead><tr><th>Code</th><th>Discount</th><th>Min order</th><th>Valid</th><th>Used</th><th>Status</th><th class="text-end">Actions</th></tr></thead>
+            <tbody>
+                @foreach (var x in Model)
+                {
+                    var expired = x.ExpiresAt.HasValue && x.ExpiresAt < DateTime.UtcNow;
+                    <tr>
+                        <td><a href="/coupons/edit/@x.Id" class="fw-semibold font-monospace">@x.Code</a><div class="small text-muted">@x.Description</div></td>
+                        <td>@(x.DiscountType == DiscountType.Percentage ? x.Value.ToString("0.##") + "%" : x.Value.Money(c))@if (x.MaxDiscount > 0) { <div class="small text-muted">max @x.MaxDiscount.Value.Money(c)</div> }</td>
+                        <td>@x.MinOrderAmount.Money(c)</td>
+                        <td class="small">@(x.StartsAt?.ToString("MMM d, yyyy") ?? "—") → @(x.ExpiresAt?.ToString("MMM d, yyyy") ?? "no expiry")</td>
+                        <td>@x.UsedCount@(x.UsageLimit.HasValue ? " / " + x.UsageLimit : "")</td>
+                        <td>@if (!x.IsActive) { <span class="badge bg-secondary">Off</span> } else if (expired) { <span class="badge bg-warning text-dark">Expired</span> } else { <span class="badge bg-success">Active</span> }</td>
+                        <td class="text-end text-nowrap">
+                            <a href="/coupons/edit/@x.Id" class="btn btn-sm btn-light"><i class="bi bi-pencil"></i></a>
+                            <form method="post" action="/coupons/delete/@x.Id" class="d-inline" data-confirm="Delete coupon @x.Code?">@Html.AntiForgeryToken()<button class="btn btn-sm btn-light text-danger"><i class="bi bi-trash"></i></button></form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,54 @@
+@model PagedList<Product>
+@{
+    ViewData["Title"] = "Products";
+    var c = (await SettingsSvc.GetAsync()).CurrencySymbol;
+    string? status = ViewBag.Status;
+}
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3"><label class="form-label">Search</label><input name="q" value="@ViewBag.Q" class="form-control" placeholder="Name or SKU" /></div>
+            <div class="col-md-3"><label class="form-label">Category</label><select name="categoryId" class="form-select" asp-items="ViewBag.Categories"><option value="">All</option></select></div>
+            <div class="col-md-2"><label class="form-label">Brand</label><select name="brandId" class="form-select" asp-items="ViewBag.Brands"><option value="">All</option></select></div>
+            <div class="col-md-2"><label class="form-label">Status</label>
+                <select name="status" class="form-select">
+                    <option value="">All</option>
+                    <option value="active" selected="@(status == "active")">Active</option>
+                    <option value="inactive" selected="@(status == "inactive")">Hidden</option>
+                    <option value="lowstock" selected="@(status == "lowstock")">Low stock</option>
+                </select></div>
+            <div class="col-md-1 d-grid"><button class="btn btn-dark"><i class="bi bi-funnel"></i></button></div>
+            <div class="col-md-1 d-grid"><a href="/products/create" class="btn btn-primary"><i class="bi bi-plus-lg"></i> New</a></div>
+        </form>
+    </div>
+</div>
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead><tr><th></th><th>Product</th><th>Category</th><th>Brand</th><th>Price</th><th>Stock</th><th>Sold</th><th>Status</th><th class="text-end">Actions</th></tr></thead>
+            <tbody>
+                @foreach (var p in Model.Items)
+                {
+                    <tr>
+                        <td><img class="thumb" src="@p.MainImage" alt="" /></td>
+                        <td><a href="/products/edit/@p.Id" class="fw-semibold">@p.Name</a><div class="small text-muted">@p.Sku</div></td>
+                        <td>@p.Category?.Name</td>
+                        <td>@p.Brand?.Name</td>
+                        <td>@p.SellingPrice.Money(c) @if (p.OnSale) { <del class="small text-muted">@p.Price.Money(c)</del> }</td>
+                        <td>@(p.TrackStock ? p.StockQuantity.ToString() : "∞")</td>
+                        <td>@p.SoldCount</td>
+                        <td>@if (p.IsActive) { <span class="badge bg-success">Active</span> } else { <span class="badge bg-secondary">Hidden</span> }</td>
+                        <td class="text-end text-nowrap">
+                            <a href="/products/edit/@p.Id" class="btn btn-sm btn-light" title="Edit"><i class="bi bi-pencil"></i></a>
+                            <form method="post" action="/products/toggleactive/@p.Id" class="d-inline">@Html.AntiForgeryToken()<button class="btn btn-sm btn-light" title="Show/hide"><i class="bi bi-eye@(p.IsActive ? "-slash" : "")"></i></button></form>
+                            <form method="post" action="/products/duplicate/@p.Id" class="d-inline">@Html.AntiForgeryToken()<button class="btn btn-sm btn-light" title="Duplicate"><i class="bi bi-copy"></i></button></form>
+                            <form method="post" action="/products/delete/@p.Id" class="d-inline" data-confirm="Delete @p.Name?">@Html.AntiForgeryToken()<button class="btn btn-sm btn-light text-danger" title="Delete"><i class="bi bi-trash"></i></button></form>
+                        </td>
+                    </tr>
+                }
+                @if (Model.Items.Count == 0) { <tr><td colspan="9" class="text-center text-muted py-4">No products found.</td></tr> }
+            </tbody>
+        </table>
+    </div>
+    <partial name="_Pager" model="(Model.Page, Model.Pages, Model.Total)" />
+</div>

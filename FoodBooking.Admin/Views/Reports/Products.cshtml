@@ -1,0 +1,35 @@
+@{
+    ViewData["Title"] = "Product Sales";
+    var c = (await SettingsSvc.GetAsync()).CurrencySymbol;
+    DateTime from = ViewBag.From, to = ViewBag.To;
+    var rows = (List<(string name, int qty, decimal revenue, int orders)>)ViewBag.Rows;
+    var total = rows.Sum(r => r.revenue);
+}
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3"><label class="form-label">From</label><input type="date" name="from" value="@from.ToString("yyyy-MM-dd")" class="form-control" /></div>
+            <div class="col-md-3"><label class="form-label">To</label><input type="date" name="to" value="@to.ToString("yyyy-MM-dd")" class="form-control" /></div>
+            <div class="col-md-1 d-grid"><button class="btn btn-dark">Run</button></div>
+        </form>
+    </div>
+</div>
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead><tr><th>#</th><th>Product</th><th class="text-end">Qty sold</th><th class="text-end">Orders</th><th class="text-end">Revenue</th><th style="width:30%">Share</th></tr></thead>
+            <tbody>
+                @for (int i = 0; i < rows.Count; i++)
+                {
+                    var r = rows[i];
+                    var pct = total > 0 ? (int)Math.Round(r.revenue / total * 100) : 0;
+                    <tr>
+                        <td>@(i + 1)</td><td class="fw-semibold">@r.name</td><td class="text-end">@r.qty</td><td class="text-end">@r.orders</td><td class="text-end">@r.revenue.Money(c)</td>
+                        <td><div class="progress" style="height:8px"><div class="progress-bar bg-danger" style="width:@pct%"></div></div><small class="text-muted">@pct%</small></td>
+                    </tr>
+                }
+                @if (rows.Count == 0) { <tr><td colspan="6" class="text-center text-muted py-4">No sales in this period.</td></tr> }
+            </tbody>
+        </table>
+    </div>
+</div>

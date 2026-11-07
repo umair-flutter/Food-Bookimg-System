@@ -1,0 +1,61 @@
+@model PagedList<Order>
+@{
+    ViewData["Title"] = "Orders";
+    var f = (OrderFilter)ViewBag.Filter;
+    var c = (await SettingsSvc.GetAsync()).CurrencySymbol;
+}
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3"><label class="form-label">Search</label><input name="q" value="@f.Q" class="form-control" placeholder="Order #, name, email, phone" /></div>
+            <div class="col-6 col-md-2"><label class="form-label">Status</label>
+                <select name="status" class="form-select" asp-items="Html.GetEnumSelectList<OrderStatus>()"><option value="">All</option></select></div>
+            <div class="col-6 col-md-2"><label class="form-label">Payment</label>
+                <select name="payment" class="form-select" asp-items="Html.GetEnumSelectList<PaymentMethod>()"><option value="">All</option></select></div>
+            <div class="col-6 col-md-1"><label class="form-label">Paid?</label>
+                <select name="paymentStatus" class="form-select" asp-items="Html.GetEnumSelectList<PaymentStatus>()"><option value="">All</option></select></div>
+            <div class="col-6 col-md-1"><label class="form-label">Type</label>
+                <select name="type" class="form-select" asp-items="Html.GetEnumSelectList<OrderType>()"><option value="">All</option></select></div>
+            <div class="col-6 col-md-1"><label class="form-label">From</label><input type="date" name="from" value="@f.From?.ToString("yyyy-MM-dd")" class="form-control" /></div>
+            <div class="col-6 col-md-1"><label class="form-label">To</label><input type="date" name="to" value="@f.To?.ToString("yyyy-MM-dd")" class="form-control" /></div>
+            <div class="col-md-1 d-grid"><button class="btn btn-dark"><i class="bi bi-funnel"></i></button></div>
+        </form>
+    </div>
+</div>
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>@Model.Total orders</span>
+        <a class="btn btn-sm btn-outline-success" href="/orders/export@(Context.Request.QueryString)"><i class="bi bi-filetype-csv"></i> Export CSV</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead><tr><th>Order</th><th>Date</th><th>Customer</th><th>Type</th><th>Status</th><th>Payment</th><th>POS</th><th class="text-end">Total</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var o in Model.Items)
+                {
+                    <tr class="@(!o.KitchenAcknowledged ? "table-warning" : "")">
+                        <td><a href="/orders/details/@o.Id" class="fw-semibold">#@o.OrderNumber</a> @if (!o.KitchenAcknowledged) { <span class="badge bg-danger">NEW</span> }</td>
+                        <td class="small">@o.CreatedAt.ToLocalTime().ToString("MMM d, yyyy h:mm tt")@if (o.ScheduledFor.HasValue) { <div class="text-primary"><i class="bi bi-clock"></i> @o.ScheduledFor.Value.ToString("ddd h:mm tt")</div> }</td>
+                        <td>@o.CustomerName<div class="small text-muted">@o.Phone</div></td>
+                        <td>@o.OrderType</td>
+                        <td><span class="badge bg-@o.Status.StatusBadge()">@o.Status.StatusText()</span></td>
+                        <td class="small">@o.PaymentMethod.PaymentText()<br /><span class="badge bg-@o.PaymentStatus.PaymentBadge()">@o.PaymentStatus</span></td>
+                        <td>@if (o.CloverOrderId != null) { <i class="bi bi-check-circle-fill text-success" title="Synced to Clover"></i> } else if (o.CloverSyncError != null) { <i class="bi bi-x-circle-fill text-danger" title="@o.CloverSyncError"></i> } else { <span class="text-muted">–</span> }</td>
+                        <td class="text-end fw-semibold">@o.Total.Money(c)</td>
+                        <td class="text-end"><a href="/orders/details/@o.Id" class="btn btn-sm btn-light">Open</a></td>
+                    </tr>
+                }
+                @if (Model.Items.Count == 0) { <tr><td colspan="9" class="text-center text-muted py-4">No orders found.</td></tr> }
+            </tbody>
+        </table>
+    </div>
+    <partial name="_Pager" model="(Model.Page, Model.Pages, Model.Total)" />
+</div>
+@section Scripts {
+    <script>
+        // keep current filter values selected
+        const p = new URLSearchParams(location.search);
+        for (const k of ['status', 'payment', 'paymentStatus', 'type']) { const v = p.get(k); if (v) $(`select[name=${k}] option`).filter(function () { return $(this).text() === v || $(this).val() === v; }).prop('selected', true); }
+        $(document).on('admin:new-order', () => setTimeout(() => location.reload(), 1500));
+    </script>
+}

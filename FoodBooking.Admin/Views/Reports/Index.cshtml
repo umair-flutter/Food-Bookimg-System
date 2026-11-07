@@ -1,0 +1,72 @@
+@{
+    ViewData["Title"] = "Order Report";
+    var c = (await SettingsSvc.GetAsync()).CurrencySymbol;
+    DateTime from = ViewBag.From, to = ViewBag.To;
+    string groupBy = ViewBag.GroupBy;
+    var rows = (List<(string, int, decimal, decimal, decimal, decimal, decimal)>)ViewBag.Rows;
+    var byPayment = (List<(string, int, decimal)>)ViewBag.ByPayment;
+    var byType = (List<(string, int, decimal)>)ViewBag.ByType;
+    var byStatus = (List<(string, int, decimal)>)ViewBag.ByStatus;
+}
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3"><label class="form-label">From</label><input type="date" name="from" value="@from.ToString("yyyy-MM-dd")" class="form-control" /></div>
+            <div class="col-md-3"><label class="form-label">To</label><input type="date" name="to" value="@to.ToString("yyyy-MM-dd")" class="form-control" /></div>
+            <div class="col-md-3"><label class="form-label">Group by</label>
+                <select name="groupBy" class="form-select">
+                    <option value="day" selected="@(groupBy == "day")">Day</option>
+                    <option value="week" selected="@(groupBy == "week")">Week</option>
+                    <option value="month" selected="@(groupBy == "month")">Month</option>
+                </select></div>
+            <div class="col-md-1 d-grid"><button class="btn btn-dark">Run</button></div>
+            <div class="col-md-2 d-grid"><a class="btn btn-outline-success" href="/orders/export?from=@from.ToString("yyyy-MM-dd")&to=@to.ToString("yyyy-MM-dd")"><i class="bi bi-filetype-csv"></i> Orders CSV</a></div>
+        </form>
+    </div>
+</div>
+<div class="row g-3 mb-3">
+    <div class="col-6 col-xl-2"><div class="card stat"><div><small>Orders</small><div class="num">@ViewBag.TotalOrders</div><small>@ViewBag.Cancelled cancelled</small></div></div></div>
+    <div class="col-6 col-xl-2"><div class="card stat"><div><small>Revenue</small><div class="num">@(((decimal)ViewBag.Revenue).Money(c))</div></div></div></div>
+    <div class="col-6 col-xl-2"><div class="card stat"><div><small>Avg. order</small><div class="num">@(((decimal)ViewBag.AvgOrder).Money(c))</div></div></div></div>
+    <div class="col-6 col-xl-2"><div class="card stat"><div><small>Discounts</small><div class="num">@(((decimal)ViewBag.Discounts).Money(c))</div></div></div></div>
+    <div class="col-6 col-xl-2"><div class="card stat"><div><small>Tax collected</small><div class="num">@(((decimal)ViewBag.Tax).Money(c))</div></div></div></div>
+    <div class="col-6 col-xl-2"><div class="card stat"><div><small>Delivery + tips</small><div class="num">@(((decimal)ViewBag.Delivery + (decimal)ViewBag.Tips).Money(c))</div></div></div></div>
+</div>
+<div class="row g-3">
+    <div class="col-xl-8">
+        <div class="card">
+            <div class="card-header">Sales by @groupBy</div>
+            <div class="card-body"><canvas id="chart" height="100"></canvas></div>
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead><tr><th>Period</th><th class="text-end">Orders</th><th class="text-end">Subtotal</th><th class="text-end">Discount</th><th class="text-end">Tax</th><th class="text-end">Delivery</th><th class="text-end">Total</th></tr></thead>
+                    <tbody>
+                        @foreach (var r in rows) { <tr><td>@r.Item1</td><td class="text-end">@r.Item2</td><td class="text-end">@r.Item3.Money(c)</td><td class="text-end">@r.Item4.Money(c)</td><td class="text-end">@r.Item5.Money(c)</td><td class="text-end">@r.Item6.Money(c)</td><td class="text-end fw-semibold">@r.Item7.Money(c)</td></tr> }
+                        @if (rows.Count == 0) { <tr><td colspan="7" class="text-center text-muted py-3">No orders in this period.</td></tr> }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        @foreach (var (title, data) in new[] { ("By payment method", byPayment), ("By order type", byType), ("By status", byStatus) })
+        {
+            <div class="card mb-3">
+                <div class="card-header">@title</div>
+                <table class="table table-sm">
+                    @foreach (var r in data) { <tr><td>@r.Item1</td><td class="text-end">@r.Item2</td><td class="text-end">@r.Item3.Money(c)</td></tr> }
+                </table>
+            </div>
+        }
+    </div>
+</div>
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script>
+        new Chart(document.getElementById('chart'), {
+            type: 'bar',
+            data: { labels: @Json.Serialize(rows.Select(r => r.Item1)), datasets: [{ label: 'Revenue', data: @Json.Serialize(rows.Select(r => r.Item7)), backgroundColor: 'rgba(230,57,70,.75)', borderRadius: 6 }] },
+            options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+        });
+    </script>
+}

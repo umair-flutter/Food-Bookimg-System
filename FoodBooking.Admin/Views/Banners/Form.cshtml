@@ -1,0 +1,32 @@
+@model Banner
+@{ ViewData["Title"] = Model.Id == 0 ? "New Banner" : "Edit Banner"; }
+<div class="toolbar"><a href="/banners" class="btn btn-light btn-sm"><i class="bi bi-arrow-left"></i> Banners</a></div>
+<div class="card" style="max-width:900px">
+    <div class="card-body">
+        <form method="post" action="/banners/save" enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="ImageUrl" />
+            <div asp-validation-summary="All" class="text-danger small mb-2"></div>
+            <div class="row g-3">
+                <div class="col-md-6"><label asp-for="Title" class="form-label"></label><input asp-for="Title" class="form-control" /></div>
+                <div class="col-md-6"><label asp-for="Position" class="form-label">Where to show</label>
+                    <select asp-for="Position" class="form-select">
+                        @foreach (var p in Enum.GetValues<BannerPosition>()) { <option value="@p">@p.PositionText()</option> }
+                    </select></div>
+                <div class="col-12"><label asp-for="SubTitle" class="form-label">Subtitle</label><input asp-for="SubTitle" class="form-control" /></div>
+                <div class="col-md-6"><label asp-for="LinkUrl" class="form-label">Link URL</label><input asp-for="LinkUrl" class="form-control" placeholder="/category/pizza or https://…" /></div>
+                <div class="col-md-6"><label asp-for="ButtonText" class="form-label">Button text</label><input asp-for="ButtonText" class="form-control" /></div>
+                <div class="col-md-4"><label asp-for="StartDate" class="form-label">Show from (optional)</label><input asp-for="StartDate" type="date" class="form-control" /></div>
+                <div class="col-md-4"><label asp-for="EndDate" class="form-label">Show until (optional)</label><input asp-for="EndDate" type="date" class="form-control" /></div>
+                <div class="col-md-4"><label asp-for="SortOrder" class="form-label">Sort order</label><input asp-for="SortOrder" class="form-control" /></div>
+                <div class="col-md-8"><label class="form-label">Image</label><input type="file" name="image" class="form-control" accept="image/*" data-preview="#prev" />
+                    <div class="form-text">Slider: about 1600×640 px. Middle banner: 1600×400. Side banner: 600×600.</div>
+                    <span class="text-danger small" asp-validation-for="ImageUrl"></span></div>
+                <div class="col-md-4"><img id="prev" src="@Model.ImageUrl" class="@(Model.ImageUrl == null ? "d-none" : "") rounded" style="max-width:100%;max-height:120px" alt="" /></div>
+                <div class="col-12 form-check ms-2"><input asp-for="IsActive" class="form-check-input" /><label asp-for="IsActive" class="form-check-label">Active</label></div>
+            </div>
+            <button class="btn btn-primary mt-3"><i class="bi bi-save"></i> Save</button>
+        </form>
+    </div>
+</div>

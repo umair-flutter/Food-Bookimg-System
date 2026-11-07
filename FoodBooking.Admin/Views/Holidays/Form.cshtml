@@ -1,0 +1,22 @@
+@model Holiday
+@{ ViewData["Title"] = Model.Id == 0 ? "Add Holiday" : "Edit Holiday"; }
+<div class="toolbar"><a href="/holidays" class="btn btn-light btn-sm"><i class="bi bi-arrow-left"></i> Holidays</a></div>
+<div class="card" style="max-width:640px">
+    <div class="card-body">
+        <form method="post" action="/holidays/save">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <div asp-validation-summary="All" class="text-danger small mb-2"></div>
+            <div class="row g-3">
+                <div class="col-md-5"><label asp-for="Date" class="form-label"></label><input asp-for="Date" type="date" class="form-control" /></div>
+                <div class="col-md-7"><label asp-for="Title" class="form-label"></label><input asp-for="Title" class="form-control" placeholder="e.g. Christmas Day" /></div>
+                <div class="col-12"><label asp-for="Message" class="form-label">Message shown to customers</label><input asp-for="Message" class="form-control" /></div>
+                <div class="col-12 form-check ms-2"><input asp-for="IsClosedAllDay" class="form-check-input" id="closed" /><label for="closed" class="form-check-label">Closed all day</label></div>
+                <div class="col-md-6 special"><label asp-for="OpenTime" class="form-label">Special opening time</label><input asp-for="OpenTime" type="time" class="form-control" /></div>
+                <div class="col-md-6 special"><label asp-for="CloseTime" class="form-label">Special closing time</label><input asp-for="CloseTime" type="time" class="form-control" /></div>
+            </div>
+            <button class="btn btn-primary mt-3"><i class="bi bi-save"></i> Save</button>
+        </form>
+    </div>
+</div>
+@section Scripts { <script>const t = () => $('.special').toggle(!$('#closed').is(':checked')); $('#closed').on('change', t); t();</script> }

@@ -1,0 +1,40 @@
+@model List<Order>
+@{
+    string? st = ViewBag.Status;
+    int page = ViewBag.Page, pages = ViewBag.Pages;
+}
+<div class="page-hero"><div class="container"><h1>Order history</h1></div></div>
+<div class="container py-5">
+    <div class="row g-4">
+        <div class="col-lg-3"><partial name="_AccountNav" /></div>
+        <div class="col-lg-9">
+            <div class="mb-3">
+                @foreach (var (val, label) in new (string?, string)[] { (null, "All"), ("active", "In progress"), ("delivered", "Delivered"), ("cancelled", "Cancelled") })
+                {
+                    <a class="chip @(st == val ? "active" : "")" href="/account/orders@(val == null ? "" : "?status=" + val)">@label</a>
+                }
+            </div>
+            <div class="card p-4">
+                @if (Model.Count == 0)
+                {
+                    <div class="empty-state py-4"><div class="icon">📭</div><p class="text-muted">No orders found.</p></div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead><tr><th>Order</th><th>Date</th><th>Type</th><th>Status</th><th>Total</th><th></th></tr></thead>
+                            <tbody>@foreach (var o in Model) { <partial name="_OrderRow" model="o" /> }</tbody>
+                        </table>
+                    </div>
+                    @if (pages > 1)
+                    {
+                        <nav class="mt-4"><ul class="pagination justify-content-center">
+                            @for (int i = 1; i <= pages; i++) { <li class="page-item @(i == page ? "active" : "")"><a class="page-link" href="/account/orders?page=@i@(st == null ? "" : "&status=" + st)">@i</a></li> }
+                        </ul></nav>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>

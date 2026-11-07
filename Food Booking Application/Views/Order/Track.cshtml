@@ -1,0 +1,48 @@
+@model TrackViewModel
+@{ var s = await Site.SettingsAsync(); }
+<div class="page-hero"><div class="container"><h1>Track your order</h1></div></div>
+<div class="container py-5" style="max-width:900px">
+    @if (Model.Order == null)
+    {
+        <div class="card p-4 auth-card">
+            <p class="text-muted">Enter your order number and the email address you used at checkout.</p>
+            <form method="get" action="/order/track">
+                <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+                <div class="mb-3"><label class="form-label">Order number</label><input name="number" value="@Model.Number" class="form-control" required /></div>
+                <div class="mb-3"><label class="form-label">Email</label><input type="email" name="email" value="@Model.Email" class="form-control" required /></div>
+                <button class="btn btn-primary w-100">Track order</button>
+            </form>
+        </div>
+    }
+    else
+    {
+        var o = Model.Order;
+        <div class="card p-4">
+            <div class="d-flex justify-content-between flex-wrap gap-2">
+                <div><h4 class="mb-0">Order #@o.OrderNumber</h4><small class="text-muted">@o.CreatedAt.ToLocalTime().ToString("MMM d, yyyy h:mm tt") · @o.OrderType · @(o.ScheduledFor?.ToString("ddd h:mm tt") ?? "ASAP")</small></div>
+                <div class="text-end"><span class="badge bg-@o.Status.StatusBadge() fs-6" id="statusBadge">@o.Status.StatusText()</span><div class="fw-bold mt-1">@o.Total.Money(s.CurrencySymbol)</div></div>
+            </div>
+            <partial name="_StatusTimeline" model="o" />
+            <h6>History</h6>
+            <ul class="list-unstyled small">
+                @foreach (var h in o.History.OrderByDescending(h => h.CreatedAt))
+                {
+                    <li class="mb-1"><span class="text-muted">@h.CreatedAt.ToLocalTime().ToString("MMM d, h:mm tt")</span> — <strong>@h.Status.StatusText()</strong> @h.Note</li>
+                }
+            </ul>
+            <div class="mt-2"><a class="btn btn-outline-dark btn-sm" href="/order/invoice?number=@o.OrderNumber&key=@o.AccessKey"><i class="bi bi-receipt"></i> View invoice</a></div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    @if (Model.Order is { } live && live.Status != OrderStatus.Delivered && live.Status != OrderStatus.Cancelled)
+    {
+        <script>
+            // Auto-refresh when the kitchen updates the status
+            const current = @((int)live.Status);
+            setInterval(() => $.getJSON('/order/status', { number: @Json.Serialize(live.OrderNumber), key: @Json.Serialize(live.AccessKey) })
+                .done(r => { if (r.status !== current) location.href = '/order/track?number=@live.OrderNumber&key=@live.AccessKey'; }), 20000);
+        </script>
+    }
+}

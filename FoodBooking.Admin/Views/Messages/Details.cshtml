@@ -1,0 +1,11 @@
+@model ContactMessage
+@{ ViewData["Title"] = "Message from " + Model.Name; }
+<div class="toolbar"><a href="/messages" class="btn btn-light btn-sm"><i class="bi bi-arrow-left"></i> Messages</a></div>
+<div class="card" style="max-width:800px">
+    <div class="card-body">
+        <h5>@(Model.Subject ?? "(no subject)")</h5>
+        <div class="small text-muted mb-3">@Model.Name · <a href="mailto:@Model.Email?subject=Re: @Uri.EscapeDataString(Model.Subject ?? "")">@Model.Email</a> @(Model.Phone != null ? "· " + Model.Phone : "") · @Model.CreatedAt.ToLocalTime().ToString("MMM d, yyyy h:mm tt")</div>
+        <p style="white-space:pre-wrap">@Model.Message</p>
+        <a class="btn btn-primary btn-sm" href="mailto:@Model.Email?subject=Re: @Uri.EscapeDataString(Model.Subject ?? "")"><i class="bi bi-reply"></i> Reply by email</a>
+    </div>
+</div>

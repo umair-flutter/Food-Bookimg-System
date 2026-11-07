@@ -1,0 +1,96 @@
+@model DashboardModel
+@{
+    ViewData["Title"] = "Dashboard";
+    var c = (await SettingsSvc.GetAsync()).CurrencySymbol;
+}
+@foreach (var w in Model.SetupWarnings)
+{
+    <div class="alert alert-warning py-2 small mb-2"><i class="bi bi-exclamation-triangle me-2"></i>@w</div>
+}
+<div class="row g-3 mb-3 mt-1">
+    <div class="col-sm-6 col-xl-3"><div class="card stat"><div class="icon bg-danger-subtle text-danger"><i class="bi bi-bag"></i></div><div><small>Orders today</small><div class="num">@Model.OrdersToday</div><small>@Model.RevenueToday.Money(c) revenue</small></div></div></div>
+    <div class="col-sm-6 col-xl-3"><a href="/orders?status=Pending" class="text-decoration-none text-reset"><div class="card stat"><div class="icon bg-warning-subtle text-warning"><i class="bi bi-hourglass-split"></i></div><div><small>Pending orders</small><div class="num">@Model.PendingOrders</div><small>waiting for acceptance</small></div></div></a></div>
+    <div class="col-sm-6 col-xl-3"><div class="card stat"><div class="icon bg-success-subtle text-success"><i class="bi bi-currency-dollar"></i></div><div><small>This month</small><div class="num">@Model.RevenueMonth.Money(c)</div><small>@Model.OrdersMonth orders</small></div></div></div>
+    <div class="col-sm-6 col-xl-3"><div class="card stat"><div class="icon bg-primary-subtle text-primary"><i class="bi bi-people"></i></div><div><small>Customers</small><div class="num">@Model.Customers</div><small>@Model.Products active products · @Model.UnreadMessages unread msgs</small></div></div></div>
+</div>
+
+<div class="row g-3">
+    <div class="col-xl-8">
+        <div class="card h-100">
+            <div class="card-header">Sales — last 14 days</div>
+            <div class="card-body"><canvas id="salesChart" height="110"></canvas></div>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="card h-100">
+            <div class="card-header">Orders by status</div>
+            <div class="card-body"><canvas id="statusChart" height="220"></canvas></div>
+        </div>
+    </div>
+    <div class="col-xl-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between">Recent orders <a href="/orders" class="small">View all</a></div>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead><tr><th>Order</th><th>Customer</th><th>Type</th><th>Status</th><th>Payment</th><th class="text-end">Total</th></tr></thead>
+                    <tbody>
+                        @foreach (var o in Model.RecentOrders)
+                        {
+                            <tr onclick="location='/orders/details/@o.Id'" style="cursor:pointer">
+                                <td><strong>#@o.OrderNumber</strong><div class="small text-muted">@o.CreatedAt.ToLocalTime().ToString("MMM d, h:mm tt")</div></td>
+                                <td>@o.CustomerName @if (o.IsGuest) { <span class="badge bg-light text-dark">guest</span> }</td>
+                                <td>@o.OrderType</td>
+                                <td><span class="badge bg-@o.Status.StatusBadge()">@o.Status.StatusText()</span></td>
+                                <td><span class="badge bg-@o.PaymentStatus.PaymentBadge()-subtle text-@o.PaymentStatus.PaymentBadge()-emphasis">@o.PaymentMethod.PaymentText()</span></td>
+                                <td class="text-end fw-semibold">@o.Total.Money(c)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="card mb-3">
+            <div class="card-header">Top products (30 days)</div>
+            <ul class="list-group list-group-flush">
+                @foreach (var t in Model.TopProducts)
+                {
+                    <li class="list-group-item d-flex justify-content-between"><span>@t.name</span><span><span class="badge bg-light text-dark">@t.qty sold</span> @t.revenue.Money(c)</span></li>
+                }
+                @if (Model.TopProducts.Count == 0) { <li class="list-group-item text-muted">No sales yet.</li> }
+            </ul>
+        </div>
+        @if (Model.LowStock.Count > 0)
+        {
+            <div class="card">
+                <div class="card-header text-danger"><i class="bi bi-exclamation-octagon"></i> Low stock</div>
+                <ul class="list-group list-group-flush">
+                    @foreach (var p in Model.LowStock) { <li class="list-group-item d-flex justify-content-between"><a href="/products/edit/@p.Id">@p.Name</a><span class="badge bg-danger">@p.StockQuantity left</span></li> }
+                </ul>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script>
+        const days = @Json.Serialize(Model.Last14Days.Select(d => d.day));
+        new Chart(document.getElementById('salesChart'), {
+            data: {
+                labels: days,
+                datasets: [
+                    { type: 'bar', label: 'Revenue', data: @Json.Serialize(Model.Last14Days.Select(d => d.revenue)), backgroundColor: 'rgba(230,57,70,.75)', borderRadius: 6, yAxisID: 'y' },
+                    { type: 'line', label: 'Orders', data: @Json.Serialize(Model.Last14Days.Select(d => d.orders)), borderColor: '#1d1e2c', tension: .35, yAxisID: 'y1' }
+                ]
+            },
+            options: { plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true }, y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { precision: 0 } } } }
+        });
+        new Chart(document.getElementById('statusChart'), {
+            type: 'doughnut',
+            data: { labels: @Json.Serialize(Model.ByStatus.Keys), datasets: [{ data: @Json.Serialize(Model.ByStatus.Values), backgroundColor: ['#ffc107', '#0dcaf0', '#0d6efd', '#6c757d', '#adb5bd', '#198754', '#dc3545'] }] },
+            options: { plugins: { legend: { position: 'bottom' } }, cutout: '65%' }
+        });
+    </script>
+}

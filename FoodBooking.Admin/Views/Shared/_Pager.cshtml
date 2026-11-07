@@ -1,0 +1,20 @@
+@model (int page, int pages, int total)
+@{
+    if (Model.pages <= 1) { <div class="small text-muted p-3">@Model.total record(s)</div>; return; }
+    string Url(int p)
+    {
+        var q = Context.Request.Query.Where(kv => kv.Key != "page").Select(kv => $"{kv.Key}={Uri.EscapeDataString(kv.Value.ToString())}").ToList();
+        q.Add("page=" + p);
+        return Context.Request.Path + "?" + string.Join("&", q);
+    }
+    var start = Math.Max(1, Model.page - 3);
+    var end = Math.Min(Model.pages, Model.page + 3);
+}
+<div class="d-flex justify-content-between align-items-center p-3">
+    <span class="small text-muted">@Model.total record(s) · page @Model.page of @Model.pages</span>
+    <ul class="pagination pagination-sm mb-0">
+        <li class="page-item @(Model.page <= 1 ? "disabled" : "")"><a class="page-link" href="@Url(Model.page - 1)">‹</a></li>
+        @for (int i = start; i <= end; i++) { <li class="page-item @(i == Model.page ? "active" : "")"><a class="page-link" href="@Url(i)">@i</a></li> }
+        <li class="page-item @(Model.page >= Model.pages ? "disabled" : "")"><a class="page-link" href="@Url(Model.page + 1)">›</a></li>
+    </ul>
+</div>

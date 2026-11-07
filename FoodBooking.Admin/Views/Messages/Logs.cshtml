@@ -1,0 +1,31 @@
+@model PagedList<NotificationLog>
+@{
+    ViewData["Title"] = "Notification Logs";
+    var ch = (NotificationChannel?)ViewBag.Channel;
+}
+<div class="toolbar">
+    <a class="btn btn-sm @(ch == null ? "btn-dark" : "btn-light")" href="/messages/logs">All</a>
+    @foreach (var c in Enum.GetValues<NotificationChannel>()) { <a class="btn btn-sm @(ch == c ? "btn-dark" : "btn-light")" href="/messages/logs?channel=@c">@c</a> }
+    <span class="text-muted small ms-auto">Every email, SMS and Clover POS call is recorded here — including ones skipped because the service is switched off.</span>
+</div>
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead><tr><th>When</th><th>Channel</th><th>To</th><th>Subject</th><th>Result</th></tr></thead>
+            <tbody>
+                @foreach (var l in Model.Items)
+                {
+                    <tr onclick="location='/messages/log/@l.Id'" style="cursor:pointer">
+                        <td class="small text-nowrap">@l.CreatedAt.ToLocalTime().ToString("MMM d, h:mm:ss tt")</td>
+                        <td><span class="badge bg-light text-dark">@l.Channel</span></td>
+                        <td class="small">@l.Recipient</td>
+                        <td class="small">@l.Subject</td>
+                        <td>@if (l.Success) { <span class="badge bg-success">Sent</span> } else { <span class="badge bg-@(l.Error?.Contains("disabled") == true ? "secondary" : "danger")" title="@l.Error">@(l.Error?.Contains("disabled") == true ? "Logged only" : "Failed")</span> }</td>
+                    </tr>
+                }
+                @if (Model.Items.Count == 0) { <tr><td colspan="5" class="text-center text-muted py-4">Nothing logged yet.</td></tr> }
+            </tbody>
+        </table>
+    </div>
+    <partial name="_Pager" model="(Model.Page, Model.Pages, Model.Total)" />
+</div>

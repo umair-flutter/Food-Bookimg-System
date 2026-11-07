@@ -1,0 +1,210 @@
+﻿@model HomeViewModel
+@{
+    var s = await Site.SettingsAsync();
+    var status = await Site.StatusAsync();
+}
+
+<section class="hero">
+    @if (Model.Slides.Count > 0)
+    {
+        <div id="heroCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel" data-bs-interval="5500">
+            @if (Model.Slides.Count > 1)
+            {
+                <div class="carousel-indicators">
+                    @for (int i = 0; i < Model.Slides.Count; i++)
+                    {
+                        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="@i" class="@(i == 0 ? "active" : "")" aria-label="Slide @(i + 1)"></button>
+                    }
+                </div>
+            }
+            <div class="carousel-inner">
+                @for (int i = 0; i < Model.Slides.Count; i++)
+                {
+                    var b = Model.Slides[i];
+                    <div class="carousel-item @(i == 0 ? "active" : "")" style="background-image:url('@b.ImageUrl')">
+                        <div class="hero-content">
+                            <div class="container">
+                                <span class="badge bg-warning text-dark mb-3 px-3 py-2 rounded-pill">@s.Tagline</span>
+                                <h1>@b.Title</h1>
+                                <p class="my-3">@b.SubTitle</p>
+                                @if (!string.IsNullOrEmpty(b.LinkUrl))
+                                {
+                                    <a href="@b.LinkUrl" class="btn btn-primary btn-lg me-2">@(b.ButtonText ?? "Order now") <i class="bi bi-arrow-right ms-1"></i></a>
+                                }
+                                <a href="/menu" class="btn btn-light btn-lg">View menu</a>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+            @if (Model.Slides.Count > 1)
+            {
+                <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev"><span class="carousel-control-prev-icon"></span></button>
+                <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next"><span class="carousel-control-next-icon"></span></button>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="page-hero py-5"><div class="container py-5"><h1 class="display-4">@s.CompanyName</h1><p class="lead">@s.Tagline</p><a href="/menu" class="btn btn-primary btn-lg">Order now</a></div></div>
+    }
+</section>
+
+<section class="hero-features">
+    <div class="container">
+        <div class="row g-3">
+            <div class="col-6 col-lg-3"><div class="feature-box"><i class="bi bi-lightning-charge"></i><div><h6>Fast delivery</h6><small>Hot at your door in ~30 min</small></div></div></div>
+            <div class="col-6 col-lg-3"><div class="feature-box"><i class="bi bi-basket"></i><div><h6>Fresh ingredients</h6><small>Cooked to order, every time</small></div></div></div>
+            <div class="col-6 col-lg-3"><div class="feature-box"><i class="bi bi-shield-check"></i><div><h6>Secure payment</h6><small>Card, PayPal or cash</small></div></div></div>
+            <div class="col-6 col-lg-3"><div class="feature-box"><i class="bi bi-clock-history"></i><div><h6>@(status.IsOpen ? "Open now" : "Order ahead")</h6><small>@status.Message</small></div></div></div>
+        </div>
+    </div>
+</section>
+
+@if (status.Holiday != null)
+{
+    <div class="container mt-4">
+        <div class="alert alert-warning rounded-4 d-flex gap-3 align-items-center mb-0"><i class="bi bi-calendar-event fs-3"></i><div><strong>@status.Holiday.Title</strong> — @(status.Holiday.Message ?? status.Message)</div></div>
+    </div>
+}
+
+@if (Model.Categories.Count > 0)
+{
+    <section class="section">
+        <div class="container">
+            <div class="section-title">
+                <span class="eyebrow">Explore</span>
+                <h2>What are you craving?</h2>
+                <p>Browse our menu by category</p>
+            </div>
+            <div class="row g-4 justify-content-center">
+                @foreach (var c in Model.Categories)
+                {
+                    <div class="col-4 col-md-3 col-lg">
+                        <a class="cat-tile" href="/category/@c.Slug">
+                            <div class="img"><img src="@(c.ImageUrl ?? "/img/no-image.svg")" alt="@c.Name" loading="lazy" /></div>
+                            <span>@c.Name</span>
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+@for (int i = 0; i < Model.TagSections.Count; i++)
+{
+    var (tag, products) = Model.TagSections[i];
+    <section class="section @(i % 2 == 1 ? "bg-white" : "") pt-4">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-end mb-4 flex-wrap gap-2">
+                <div>
+                    <span class="badge rounded-pill mb-2 px-3 py-2" style="background:@tag.BadgeColor">@tag.Name</span>
+                    <h2 class="mb-1">@tag.Name</h2>
+                    <p class="text-muted mb-0">@tag.Subtitle</p>
+                </div>
+                <a href="/tag/@tag.Slug" class="btn btn-outline-primary">View all <i class="bi bi-arrow-right"></i></a>
+            </div>
+            <div class="row g-4">
+                @foreach (var p in products)
+                {
+                    <div class="col-6 col-md-4 col-lg-3"><partial name="_ProductCard" model="p" /></div>
+                }
+            </div>
+        </div>
+    </section>
+
+    @if (i == 0)
+    {
+        foreach (var b in Model.MiddleBanners)
+        {
+            <section class="container my-4">
+                <a class="promo-banner" href="@(b.LinkUrl ?? "#")" style="background-image:url('@b.ImageUrl')">
+                    <div>
+                        <h3>@b.Title</h3>
+                        <p class="fs-5">@b.SubTitle</p>
+                        @if (!string.IsNullOrEmpty(b.ButtonText)) { <span class="btn btn-light">@b.ButtonText</span> }
+                    </div>
+                </a>
+            </section>
+        }
+    }
+}
+
+@if (Model.BottomBanners.Count > 0)
+{
+    <section class="section pt-2">
+        <div class="container">
+            <div class="row g-4">
+                @foreach (var b in Model.BottomBanners)
+                {
+                    <div class="col-md-@(12 / Math.Min(3, Model.BottomBanners.Count))">
+                        <a class="promo-banner h-100" href="@(b.LinkUrl ?? "#")" style="background-image:url('@b.ImageUrl')">
+                            <div><h3>@b.Title</h3><p>@b.SubTitle</p>@if (!string.IsNullOrEmpty(b.ButtonText)) { <span class="btn btn-light btn-sm">@b.ButtonText</span> }</div>
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+@if (Model.Brands.Count > 0)
+{
+    <section class="section bg-white">
+        <div class="container">
+            <div class="section-title"><span class="eyebrow">Our kitchens</span><h2>Shop by brand</h2></div>
+            <div class="row g-3 justify-content-center">
+                @foreach (var b in Model.Brands)
+                {
+                    <div class="col-6 col-md-4 col-lg-2">
+                        <a class="brand-tile" href="/brand/@b.Slug" title="@b.Name">
+                            @if (!string.IsNullOrEmpty(b.LogoUrl)) { <img src="@b.LogoUrl" alt="@b.Name" loading="lazy" /> } else { <strong>@b.Name</strong> }
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+@if (Model.RecentlyViewed.Count > 0)
+{
+    <section class="section">
+        <div class="container">
+            <div class="section-title"><span class="eyebrow">Pick up where you left off</span><h2>Recently viewed</h2></div>
+            <div class="row g-4">
+                @foreach (var p in Model.RecentlyViewed)
+                {
+                    <div class="col-6 col-md-4 col-lg-2"><partial name="_ProductCard" model="p" /></div>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+<section class="section">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6">
+                <span class="eyebrow text-primary fw-semibold text-uppercase small">How it works</span>
+                <h2 class="my-3">Your favourite food in 3 easy steps</h2>
+                <div class="d-flex gap-3 mb-3"><span class="fs-2">📱</span><div><h6 class="mb-1">1. Choose your meal</h6><p class="text-muted mb-0">Browse the menu, customise sizes and toppings.</p></div></div>
+                <div class="d-flex gap-3 mb-3"><span class="fs-2">💳</span><div><h6 class="mb-1">2. Pay your way</h6><p class="text-muted mb-0">Card, PayPal or cash on delivery — guest checkout welcome.</p></div></div>
+                <div class="d-flex gap-3"><span class="fs-2">🛵</span><div><h6 class="mb-1">3. Enjoy!</h6><p class="text-muted mb-0">Track your order live until it reaches you.</p></div></div>
+                <a href="/menu" class="btn btn-primary btn-lg mt-4">Start your order</a>
+            </div>
+            <div class="col-lg-6">
+                <div class="card p-4">
+                    <h5><i class="bi bi-info-circle text-primary me-2"></i>About @s.CompanyName</h5>
+                    <p class="text-muted">@s.AboutText</p>
+                    <div class="row text-center g-3 mt-1">
+                        <div class="col-4"><div class="fs-3 fw-bold text-primary">30'</div><small class="text-muted">avg delivery</small></div>
+                        <div class="col-4"><div class="fs-3 fw-bold text-primary">4.8★</div><small class="text-muted">customer rating</small></div>
+                        <div class="col-4"><div class="fs-3 fw-bold text-primary">100%</div><small class="text-muted">fresh</small></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

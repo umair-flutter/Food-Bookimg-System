@@ -1,0 +1,14 @@
+@{ var action = ViewContext.RouteData.Values["action"]?.ToString(); }
+<div class="card p-3 account-nav">
+    <div class="d-flex align-items-center gap-3 p-2 mb-2">
+        <div class="btn-icon bg-primary text-white fw-bold">@(User.Identity?.Name?.FirstOrDefault())</div>
+        <div><div class="fw-semibold">@User.Identity?.Name</div><small class="text-muted">@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value</small></div>
+    </div>
+    <div class="list-group">
+        <a href="/account" class="list-group-item list-group-item-action @(action == "Index" ? "active" : "")"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a>
+        <a href="/account/orders" class="list-group-item list-group-item-action @(action is "Orders" or "OrderDetail" ? "active" : "")"><i class="bi bi-bag me-2"></i>Order history</a>
+        <a href="/account/profile" class="list-group-item list-group-item-action @(action == "Profile" ? "active" : "")"><i class="bi bi-person me-2"></i>Profile &amp; address</a>
+        <a href="/account/change-password" class="list-group-item list-group-item-action @(action == "ChangePassword" ? "active" : "")"><i class="bi bi-key me-2"></i>Change password</a>
+        <form method="post" action="/account/logout">@Html.AntiForgeryToken()<button class="list-group-item list-group-item-action text-danger"><i class="bi bi-box-arrow-right me-2"></i>Logout</button></form>
+    </div>
+</div>

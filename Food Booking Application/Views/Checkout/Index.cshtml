@@ -1,0 +1,271 @@
+@model CheckoutViewModel
+@{
+    var s = Model.Settings;
+    var m = Model.Summary;
+    var c = s.CurrencySymbol;
+    var cardLive = Model.CardGatewayLive;
+    var paypalLive = Model.PaypalLive;
+}
+<div class="page-hero"><div class="container"><h1>Checkout</h1><nav><ol class="breadcrumb"><li class="breadcrumb-item"><a href="/">Home</a></li><li class="breadcrumb-item"><a href="/cart">Cart</a></li><li class="breadcrumb-item active">Checkout</li></ol></nav></div></div>
+
+<div class="container py-5">
+    @if (!Model.LoggedIn)
+    {
+        <div class="alert alert-light border rounded-4 d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <span><i class="bi bi-person-circle me-2"></i>Have an account? Log in for faster checkout and order history.</span>
+            <span><a class="btn btn-sm btn-dark" href="/account/login?returnUrl=/checkout">Log in</a> <a class="btn btn-sm btn-outline-dark" href="/account/register?returnUrl=/checkout">Register</a></span>
+        </div>
+    }
+    @if (Model.Errors.Count > 0)
+    {
+        <div class="alert alert-danger rounded-4" id="errors"><ul class="mb-0">@foreach (var e in Model.Errors) { <li>@e</li> }</ul></div>
+    }
+    <div class="alert alert-danger rounded-4 d-none" id="jsErrors"></div>
+
+    <form method="post" action="/checkout" id="checkoutForm" novalidate>
+        @Html.AntiForgeryToken()
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <div class="checkout-step">
+                    <h5><span class="num">1</span>How would you like your food?</h5>
+                    <div class="row g-3 mt-1">
+                        @if (s.EnableDelivery)
+                        {
+                            <div class="col-6 choice">
+                                <input type="radio" asp-for="Input.OrderType" value="@OrderType.Delivery" id="typeDelivery" />
+                                <label for="typeDelivery"><i class="bi bi-truck"></i><div><strong>Delivery</strong><div class="small text-muted">@(s.DeliveryCharge > 0 ? s.DeliveryCharge.Money(c) : "Free")@(s.FreeDeliveryAbove > 0 ? $" · free over {s.FreeDeliveryAbove.Money(c)}" : "")</div></div></label>
+                            </div>
+                        }
+                        @if (s.EnablePickup)
+                        {
+                            <div class="col-6 choice">
+                                <input type="radio" asp-for="Input.OrderType" value="@OrderType.Pickup" id="typePickup" />
+                                <label for="typePickup"><i class="bi bi-shop"></i><div><strong>Pickup</strong><div class="small text-muted">Collect from store · free</div></div></label>
+                            </div>
+                        }
+                    </div>
+                    <div class="mt-3">
+                        <label class="form-label fw-semibold">When?</label>
+                        <select asp-for="Input.When" class="form-select">
+                            @if (Model.IsOpenNow) { <option value="asap">As soon as possible</option> }
+                            @foreach (var g in Model.Slots.GroupBy(t => t.Date))
+                            {
+                                <optgroup label="@(g.Key == DateTime.Today ? "Today" : g.Key == DateTime.Today.AddDays(1) ? "Tomorrow" : g.Key.ToString("dddd, MMM d"))">
+                                    @foreach (var t in g) { <option value="@t.ToString("yyyy-MM-ddTHH:mm")">@t.ToString("h:mm tt")</option> }
+                                </optgroup>
+                            }
+                        </select>
+                        @if (!Model.IsOpenNow) { <small class="text-danger"><i class="bi bi-clock"></i> We're closed right now — please choose a time for your order.</small> }
+                    </div>
+                </div>
+
+                <div class="checkout-step">
+                    <h5><span class="num">2</span>Your details</h5>
+                    <div class="row g-3 mt-1">
+                        <div class="col-md-6"><label asp-for="Input.FirstName" class="form-label"></label><input asp-for="Input.FirstName" class="form-control" required /></div>
+                        <div class="col-md-6"><label asp-for="Input.LastName" class="form-label"></label><input asp-for="Input.LastName" class="form-control" /></div>
+                        <div class="col-md-6"><label asp-for="Input.Email" class="form-label"></label><input asp-for="Input.Email" class="form-control" required /></div>
+                        <div class="col-md-6"><label asp-for="Input.Phone" class="form-label"></label><input asp-for="Input.Phone" class="form-control" required /></div>
+                    </div>
+                    <div id="addressFields" class="row g-3 mt-1">
+                        <div class="col-12"><label asp-for="Input.Address" class="form-label">Delivery address</label><input asp-for="Input.Address" class="form-control" placeholder="Street, building, apartment" /></div>
+                        <div class="col-md-6"><label asp-for="Input.City" class="form-label"></label><input asp-for="Input.City" class="form-control" /></div>
+                        <div class="col-md-6"><label asp-for="Input.PostalCode" class="form-label"></label><input asp-for="Input.PostalCode" class="form-control" /></div>
+                        @if (Model.LoggedIn)
+                        {
+                            <div class="col-12 form-check ms-2"><input asp-for="Input.SaveAddress" class="form-check-input" /><label asp-for="Input.SaveAddress" class="form-check-label">Save this address to my profile</label></div>
+                        }
+                    </div>
+                    <div class="mt-3"><label asp-for="Input.Notes" class="form-label"></label><textarea asp-for="Input.Notes" class="form-control" rows="2" placeholder="Allergies, gate code, cutlery…"></textarea></div>
+                </div>
+
+                <div class="checkout-step">
+                    <h5><span class="num">3</span>Payment</h5>
+                    @if (s.PaymentTestMode && (s.EnableCreditCard || s.EnablePaypal))
+                    {
+                        <div class="alert alert-info small py-2"><i class="bi bi-info-circle"></i> <strong>Test mode:</strong> card and PayPal payments are simulated and no money is charged. Switch to live mode in Admin → Settings → Payments.</div>
+                    }
+                    <div class="row g-3 mt-1">
+                        @if (s.EnableCashOnDelivery)
+                        {
+                            <div class="col-md-4 choice">
+                                <input type="radio" asp-for="Input.PaymentMethod" value="@PaymentMethod.CashOnDelivery" id="payCod" />
+                                <label for="payCod"><i class="bi bi-cash-coin"></i><strong>Cash on delivery</strong></label>
+                            </div>
+                        }
+                        @if (s.EnableCreditCard && (s.PaymentTestMode || cardLive))
+                        {
+                            <div class="col-md-4 choice">
+                                <input type="radio" asp-for="Input.PaymentMethod" value="@PaymentMethod.CreditCard" id="payCard" />
+                                <label for="payCard"><i class="bi bi-credit-card"></i><strong>Credit / debit card</strong></label>
+                            </div>
+                        }
+                        @if (s.EnablePaypal && (s.PaymentTestMode || paypalLive))
+                        {
+                            <div class="col-md-4 choice">
+                                <input type="radio" asp-for="Input.PaymentMethod" value="@PaymentMethod.PayPal" id="payPaypal" />
+                                <label for="payPaypal"><i class="bi bi-paypal"></i><strong>PayPal</strong></label>
+                            </div>
+                        }
+                    </div>
+                    @if (cardLive)
+                    {
+                        <div id="cardFields" class="mt-3 d-none">
+                            <p class="small text-muted mb-2"><i class="bi bi-lock-fill"></i> Card details are entered securely with Clover and never touch our servers.</p>
+                            <div class="row g-2">
+                                <div class="col-12"><div id="card-number" class="clover-field"></div></div>
+                                <div class="col-4"><div id="card-date" class="clover-field"></div></div>
+                                <div class="col-4"><div id="card-cvv" class="clover-field"></div></div>
+                                <div class="col-4"><div id="card-postal-code" class="clover-field"></div></div>
+                            </div>
+                            <input type="hidden" asp-for="Input.CardToken" />
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="card p-4 position-sticky" style="top:100px">
+                    <h5 class="mb-3">Order summary</h5>
+                    @foreach (var l in m.Lines)
+                    {
+                        <div class="d-flex gap-3 mb-3">
+                            <img src="@l.Product.MainImage" style="width:56px;height:56px;object-fit:cover;border-radius:12px" alt="" />
+                            <div class="flex-grow-1 small">
+                                <div class="fw-semibold">@l.Line.Quantity × @l.Product.Name</div>
+                                @if (!string.IsNullOrEmpty(l.OptionsText)) { <div class="text-muted">@l.OptionsText</div> }
+                                @if (l.Problem != null) { <div class="text-danger">@l.Problem</div> }
+                            </div>
+                            <span class="fw-semibold">@l.LineTotal.Money(c)</span>
+                        </div>
+                    }
+                    <a href="/cart" class="small">Edit cart</a>
+                    <hr />
+                    <div class="summary-row"><span>Subtotal</span><span>@m.SubTotal.Money(c)</span></div>
+                    @if (m.Discount > 0) { <div class="summary-row text-success"><span>Discount (@m.Coupon?.Code)</span><span>-@m.Discount.Money(c)</span></div> }
+                    @if (m.Tax > 0) { <div class="summary-row"><span>Tax (@m.TaxPercent.ToString("0.##")%)</span><span>@m.Tax.Money(c)</span></div> }
+                    <div class="summary-row"><span>Delivery</span><span id="deliveryAmount" data-delivery="@(s.FreeDeliveryAbove > 0 && m.SubTotal >= s.FreeDeliveryAbove ? 0 : s.DeliveryCharge)">@m.DeliveryCharge.Money(c)</span></div>
+                    @if (s.EnableTips)
+                    {
+                        <div class="mt-2">
+                            <div class="small text-muted mb-1">Add a tip for the team</div>
+                            <div class="tip-options d-flex gap-2">
+                                @foreach (var pct in new[] { 0, 10, 15, 20 })
+                                {
+                                    var amt = Math.Round(m.SubTotal * pct / 100m, 2);
+                                    <button type="button" class="btn btn-sm flex-fill @(m.Tip == amt ? "btn-dark active" : "btn-outline-dark")" data-tip="@amt.ToString(System.Globalization.CultureInfo.InvariantCulture)">@(pct == 0 ? "None" : pct + "%")</button>
+                                }
+                            </div>
+                            <div class="summary-row"><span>Tip</span><span data-sum="tip">@m.Tip.Money(c)</span></div>
+                        </div>
+                    }
+                    <div class="summary-row summary-total"><span>Total</span><span id="grandTotal" data-sum="total">@m.Total.Money(c)</span></div>
+
+                    <div class="form-check mt-3">
+                        <input class="form-check-input" type="checkbox" asp-for="Input.AcceptTerms" required />
+                        <label class="form-check-label small" asp-for="Input.AcceptTerms">I agree to the <a href="/page/terms-and-conditions" target="_blank">terms &amp; conditions</a> and <a href="/page/privacy-policy" target="_blank">privacy policy</a></label>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-lg w-100 mt-3" id="placeOrderBtn"><i class="bi bi-bag-check me-1"></i> Place order</button>
+                    <div id="paypal-buttons" class="mt-3 d-none"></div>
+                    <div class="text-center small text-muted mt-3"><i class="bi bi-shield-lock"></i> Your information is encrypted and secure</div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @if (cardLive) { <script src="@CloverService.SdkUrl(s)"></script> }
+    @if (paypalLive) { <script src="https://www.paypal.com/sdk/js?client-id=@Uri.EscapeDataString(s.PaypalClientId!)&currency=@s.CurrencyCode&intent=capture"></script> }
+    <script>
+        (function () {
+            const $form = $('#checkoutForm');
+            const subtotalDelivery = parseFloat($('#deliveryAmount').data('delivery')) || 0;
+            const cardLive = @Json.Serialize(cardLive), paypalLive = @Json.Serialize(paypalLive);
+
+            function method() { return $('input[name="Input.PaymentMethod"]:checked').val(); }
+            function type() { return $('input[name="Input.OrderType"]:checked').val(); }
+
+            // Make sure something is selected
+            if (!$('input[name="Input.OrderType"]:checked').length) $('input[name="Input.OrderType"]').first().prop('checked', true);
+            if (!$('input[name="Input.PaymentMethod"]:checked').length) $('input[name="Input.PaymentMethod"]').first().prop('checked', true);
+
+            function refresh() {
+                const delivery = type() === 'Delivery';
+                $('#addressFields').toggle(delivery);
+                $('#Input_Address, #Input_City').prop('required', delivery);
+                $('#deliveryAmount').text(FB.money(delivery ? subtotalDelivery : 0));
+                $('#cardFields').toggleClass('d-none', method() !== 'CreditCard');
+                const pp = paypalLive && method() === 'PayPal';
+                $('#paypal-buttons').toggleClass('d-none', !pp);
+                $('#placeOrderBtn').toggleClass('d-none', pp);
+                recalcTotal();
+            }
+            let lastTotals = null;
+            function recalcTotal() {
+                // server totals assume the default order type; adjust delivery client-side for display
+                const base = lastTotals ? parseFloat(lastTotals.total.replace(/[^0-9.]/g, '')) : @Json.Serialize(m.Total);
+                // AJAX totals are always priced as Delivery; the initial render uses the selected type
+                const included = lastTotals ? subtotalDelivery : @Json.Serialize(m.DeliveryCharge);
+                const d = type() === 'Delivery' ? subtotalDelivery : 0;
+                $('#grandTotal').text(FB.money(base - included + d));
+            }
+            $(document).on('fb:totals', (e, r) => { lastTotals = r; recalcTotal(); });
+            $form.on('change', 'input[type=radio]', refresh);
+            refresh();
+
+            function showErrors(list) {
+                $('#jsErrors').removeClass('d-none').empty().append($('<ul class="mb-0">').append(list.map(e => $('<li>').text(e))));
+                window.scrollTo({ top: $('#jsErrors').offset().top - 120, behavior: 'smooth' });
+            }
+
+            // Clover hosted card fields
+            let clover = null;
+            if (cardLive && window.Clover) {
+                clover = new Clover(@Json.Serialize(s.CloverEcommercePublicKey));
+                const el = clover.elements();
+                const style = { body: { fontFamily: 'Poppins, sans-serif', fontSize: '15px' } };
+                el.create('CARD_NUMBER', style).mount('#card-number');
+                el.create('CARD_DATE', style).mount('#card-date');
+                el.create('CARD_CVV', style).mount('#card-cvv');
+                el.create('CARD_POSTAL_CODE', style).mount('#card-postal-code');
+            }
+
+            $form.on('submit', function (e) {
+                if (!this.checkValidity()) { e.preventDefault(); this.reportValidity(); return; }
+                $('#placeOrderBtn').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Placing order…');
+                if (clover && method() === 'CreditCard' && !$('#Input_CardToken').val()) {
+                    e.preventDefault();
+                    clover.createToken().then(r => {
+                        if (r.errors) {
+                            showErrors(Object.values(r.errors));
+                            $('#placeOrderBtn').prop('disabled', false).html('<i class="bi bi-bag-check me-1"></i> Place order');
+                            return;
+                        }
+                        $('#Input_CardToken').val(r.token);
+                        $form[0].submit();
+                    });
+                }
+            });
+
+            // PayPal smart buttons
+            if (paypalLive && window.paypal) {
+                paypal.Buttons({
+                    style: { shape: 'pill', label: 'pay' },
+                    onClick: (data, actions) => {
+                        if (!$form[0].checkValidity()) { $form[0].reportValidity(); return actions.reject(); }
+                        return actions.resolve();
+                    },
+                    createOrder: () => FB.post('/checkout/paypal/create', $form.serialize()).then(r => {
+                        if (!r.ok) { showErrors(r.errors); throw new Error('validation'); }
+                        return r.id;
+                    }),
+                    onApprove: data => FB.post('/checkout/paypal/capture', { paypalOrderId: data.orderID }).then(r => {
+                        if (r.ok) window.location = r.redirect; else showErrors(r.errors);
+                    }),
+                    onError: err => { if (err && err.message !== 'validation') showErrors(['PayPal payment could not be completed. Please try again.']); }
+                }).render('#paypal-buttons');
+            }
+        })();
+    </script>
+}

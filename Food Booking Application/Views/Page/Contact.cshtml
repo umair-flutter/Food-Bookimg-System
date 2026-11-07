@@ -1,0 +1,37 @@
+@model ContactViewModel
+@{ var s = await Site.SettingsAsync(); }
+<div class="page-hero"><div class="container"><h1>Contact us</h1><nav><ol class="breadcrumb"><li class="breadcrumb-item"><a href="/">Home</a></li><li class="breadcrumb-item active">Contact</li></ol></nav></div></div>
+<div class="container py-5">
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <div class="card p-4 h-100">
+                <h4>Get in touch</h4>
+                <p class="text-muted">Questions about an order, catering or feedback? We'd love to hear from you.</p>
+                @if (!string.IsNullOrEmpty(s.Address)) { <p><i class="bi bi-geo-alt text-primary me-2"></i>@s.Address</p> }
+                @if (!string.IsNullOrEmpty(s.Phone)) { <p><i class="bi bi-telephone text-primary me-2"></i><a href="tel:@s.Phone">@s.Phone</a></p> }
+                @if (!string.IsNullOrEmpty(s.Email)) { <p><i class="bi bi-envelope text-primary me-2"></i><a href="mailto:@s.Email">@s.Email</a></p> }
+                <partial name="_Social" model="s" />
+                @if (!string.IsNullOrEmpty(s.MapEmbedUrl))
+                {
+                    <div class="ratio ratio-4x3 mt-4 rounded-4 overflow-hidden"><iframe src="@s.MapEmbedUrl" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Map"></iframe></div>
+                }
+            </div>
+        </div>
+        <div class="col-lg-7">
+            <div class="card p-4">
+                <form method="post" action="/contact">
+                    @Html.AntiForgeryToken()
+                    <div class="row g-3">
+                        <div class="col-md-6"><label asp-for="Name" class="form-label"></label><input asp-for="Name" class="form-control" /><span asp-validation-for="Name" class="text-danger small"></span></div>
+                        <div class="col-md-6"><label asp-for="Email" class="form-label"></label><input asp-for="Email" class="form-control" /><span asp-validation-for="Email" class="text-danger small"></span></div>
+                        <div class="col-md-6"><label asp-for="Phone" class="form-label"></label><input asp-for="Phone" class="form-control" /></div>
+                        <div class="col-md-6"><label asp-for="Subject" class="form-label"></label><input asp-for="Subject" class="form-control" /></div>
+                        <div class="col-12"><label asp-for="Message" class="form-label"></label><textarea asp-for="Message" class="form-control" rows="6"></textarea><span asp-validation-for="Message" class="text-danger small"></span></div>
+                    </div>
+                    <button class="btn btn-primary btn-lg mt-4"><i class="bi bi-send"></i> Send message</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

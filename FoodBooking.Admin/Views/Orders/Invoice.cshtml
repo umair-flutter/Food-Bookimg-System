@@ -1,0 +1,42 @@
+@model Order
+@{
+    Layout = null;
+    var s = (SiteSetting)ViewBag.Settings;
+    var c = s.CurrencySymbol;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Invoice #@Model.OrderNumber</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+    <style>body{font-size:14px;padding:30px} @@media print{.no-print{display:none}}</style>
+</head>
+<body onload="window.print()">
+    <div class="container" style="max-width:800px">
+        <div class="d-flex justify-content-between mb-4">
+            <div>@if (!string.IsNullOrEmpty(s.LogoUrl)) { <img src="@s.LogoUrl" style="max-height:50px" alt="" /> } else { <h3>@s.CompanyName</h3> }<div class="small text-muted">@s.Address<br />@s.Phone · @s.Email</div></div>
+            <div class="text-end"><h4>INVOICE</h4><div>#@Model.OrderNumber</div><div class="small">@Model.CreatedAt.ToLocalTime().ToString("MMM d, yyyy h:mm tt")</div></div>
+        </div>
+        <div class="row mb-3">
+            <div class="col"><strong>Bill to</strong><br />@Model.CustomerName<br />@Model.Phone<br />@Model.Email@if (Model.OrderType == OrderType.Delivery) { <br />@Model.Address<br />@Model.City @Model.PostalCode }</div>
+            <div class="col text-end"><strong>@Model.OrderType</strong> · @(Model.ScheduledFor?.ToString("ddd h:mm tt") ?? "ASAP")<br />@Model.PaymentMethod.PaymentText() (@Model.PaymentStatus)<br />Status: @Model.Status.StatusText()</div>
+        </div>
+        @if (!string.IsNullOrEmpty(Model.Notes)) { <p><strong>Notes:</strong> @Model.Notes</p> }
+        <table class="table table-bordered">
+            <thead class="table-light"><tr><th>Item</th><th class="text-center">Qty</th><th class="text-end">Price</th><th class="text-end">Total</th></tr></thead>
+            <tbody>@foreach (var i in Model.Items) { <tr><td>@i.ProductName<br /><small>@i.OptionsText</small></td><td class="text-center">@i.Quantity</td><td class="text-end">@i.UnitPrice.Money(c)</td><td class="text-end">@i.LineTotal.Money(c)</td></tr> }</tbody>
+            <tfoot>
+                <tr><td colspan="3" class="text-end">Subtotal</td><td class="text-end">@Model.SubTotal.Money(c)</td></tr>
+                @if (Model.Discount > 0) { <tr><td colspan="3" class="text-end">Discount</td><td class="text-end">-@Model.Discount.Money(c)</td></tr> }
+                <tr><td colspan="3" class="text-end">Tax</td><td class="text-end">@Model.Tax.Money(c)</td></tr>
+                <tr><td colspan="3" class="text-end">Delivery</td><td class="text-end">@Model.DeliveryCharge.Money(c)</td></tr>
+                @if (Model.Tip > 0) { <tr><td colspan="3" class="text-end">Tip</td><td class="text-end">@Model.Tip.Money(c)</td></tr> }
+                <tr><th colspan="3" class="text-end">Total</th><th class="text-end">@Model.Total.Money(c)</th></tr>
+            </tfoot>
+        </table>
+        <p class="text-center small text-muted">Thank you for your order!</p>
+        <div class="text-center no-print"><button class="btn btn-dark" onclick="window.print()">Print</button></div>
+    </div>
+</body>
+</html>

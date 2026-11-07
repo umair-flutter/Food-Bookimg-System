@@ -1,0 +1,28 @@
+@model Order
+@{
+    var steps = new List<(OrderStatus status, string icon, string label)>
+    {
+        (OrderStatus.Pending, "bi-receipt", "Placed"),
+        (OrderStatus.Confirmed, "bi-check2-circle", "Confirmed"),
+        (OrderStatus.Preparing, "bi-fire", "Preparing"),
+        Model.OrderType == OrderType.Delivery ? (OrderStatus.OutForDelivery, "bi-truck", "On the way") : (OrderStatus.ReadyForPickup, "bi-bag-check", "Ready"),
+        (OrderStatus.Delivered, "bi-emoji-smile", Model.OrderType == OrderType.Delivery ? "Delivered" : "Collected")
+    };
+    int Rank(OrderStatus st) => st switch { OrderStatus.Pending => 0, OrderStatus.Confirmed => 1, OrderStatus.Preparing => 2, OrderStatus.ReadyForPickup or OrderStatus.OutForDelivery => 3, OrderStatus.Delivered => 4, _ => -1 };
+    var current = Rank(Model.Status);
+}
+@if (Model.Status == OrderStatus.Cancelled)
+{
+    <div class="alert alert-danger rounded-4"><i class="bi bi-x-circle me-2"></i>This order has been cancelled.</div>
+}
+else
+{
+    <div class="timeline">
+        @for (int i = 0; i < steps.Count; i++)
+        {
+            <div class="step @(i <= current ? "done" : "") @(i == current && Model.Status != OrderStatus.Delivered ? "current" : "")">
+                <div class="dot"><i class="bi @steps[i].icon"></i></div>@steps[i].label
+            </div>
+        }
+    </div>
+}

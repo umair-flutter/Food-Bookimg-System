@@ -1,0 +1,114 @@
+@model Order
+@{
+    ViewData["Title"] = "Order #" + Model.OrderNumber;
+    var s = await SettingsSvc.GetAsync();
+    var c = s.CurrencySymbol;
+    var next = Model.NextStatuses().ToList();
+}
+<div class="toolbar">
+    <a href="/orders" class="btn btn-light btn-sm"><i class="bi bi-arrow-left"></i> Orders</a>
+    <span class="badge bg-@Model.Status.StatusBadge() fs-6">@Model.Status.StatusText()</span>
+    <span class="badge bg-@Model.PaymentStatus.PaymentBadge() fs-6">@Model.PaymentStatus</span>
+    <div class="ms-auto d-flex gap-2 flex-wrap">
+        <a href="/orders/invoice/@Model.Id" target="_blank" class="btn btn-sm btn-outline-dark"><i class="bi bi-printer"></i> Print invoice</a>
+        <form method="post" action="/orders/resendconfirmation/@Model.Id">@Html.AntiForgeryToken()<button class="btn btn-sm btn-outline-dark"><i class="bi bi-envelope"></i> Email invoice</button></form>
+        <form method="post" action="/orders/sendtoclover/@Model.Id" data-confirm="Send this order to Clover POS@(Model.CloverOrderId != null ? " again? It already has a Clover order" : "")?">@Html.AntiForgeryToken()<button class="btn btn-sm btn-outline-success"><i class="bi bi-shop-window"></i> @(Model.CloverOrderId == null ? "Send to Clover POS" : "Re-send to Clover")</button></form>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-xl-8">
+        <div class="card mb-3">
+            <div class="card-header">Items</div>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead><tr><th>Item</th><th class="text-center">Qty</th><th class="text-end">Unit</th><th class="text-end">Total</th></tr></thead>
+                    <tbody>
+                        @foreach (var i in Model.Items)
+                        {
+                            <tr>
+                                <td><div class="d-flex gap-2 align-items-center"><img class="thumb" src="@(i.ImageUrl ?? "")" alt="" /><div><div class="fw-semibold">@i.ProductName</div><small class="text-muted">@i.OptionsText</small></div></div></td>
+                                <td class="text-center">@i.Quantity</td><td class="text-end">@i.UnitPrice.Money(c)</td><td class="text-end">@i.LineTotal.Money(c)</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr><td colspan="3" class="text-end">Subtotal</td><td class="text-end">@Model.SubTotal.Money(c)</td></tr>
+                        @if (Model.Discount > 0) { <tr class="text-success"><td colspan="3" class="text-end">Discount (@Model.CouponCode)</td><td class="text-end">-@Model.Discount.Money(c)</td></tr> }
+                        <tr><td colspan="3" class="text-end">Tax</td><td class="text-end">@Model.Tax.Money(c)</td></tr>
+                        <tr><td colspan="3" class="text-end">Delivery</td><td class="text-end">@Model.DeliveryCharge.Money(c)</td></tr>
+                        @if (Model.Tip > 0) { <tr><td colspan="3" class="text-end">Tip</td><td class="text-end">@Model.Tip.Money(c)</td></tr> }
+                        <tr class="fs-5"><th colspan="3" class="text-end">Total</th><th class="text-end">@Model.Total.Money(c)</th></tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">Status history</div>
+            <ul class="list-group list-group-flush">
+                @foreach (var h in Model.History.OrderByDescending(h => h.CreatedAt))
+                {
+                    <li class="list-group-item d-flex justify-content-between"><span><span class="badge bg-@h.Status.StatusBadge()">@h.Status.StatusText()</span> @h.Note</span><small class="text-muted">@h.CreatedAt.ToLocalTime().ToString("MMM d, h:mm tt")</small></li>
+                }
+            </ul>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        @if (next.Count > 0)
+        {
+            <div class="card mb-3 border-primary">
+                <div class="card-header">Update status</div>
+                <div class="card-body">
+                    <form method="post" action="/orders/updatestatus/@Model.Id">
+                        @Html.AntiForgeryToken()
+                        <select name="status" class="form-select mb-2">
+                            @foreach (var st in next) { <option value="@st">@st.StatusText()</option> }
+                        </select>
+                        <input name="note" class="form-control mb-2" placeholder="Note to customer (optional)" />
+                        <div class="form-check mb-2"><input type="checkbox" name="notifyCustomer" value="true" class="form-check-input" id="notify" checked /><label class="form-check-label" for="notify">Notify customer (email + SMS)</label></div>
+                        <button class="btn btn-primary w-100">Update</button>
+                    </form>
+                </div>
+            </div>
+        }
+        <div class="card mb-3">
+            <div class="card-header">Customer</div>
+            <div class="card-body">
+                <div class="fw-semibold">@Model.CustomerName @if (Model.IsGuest) { <span class="badge bg-light text-dark">Guest</span> } else if (Model.CustomerId != null) { <a href="/customers/details/@Model.CustomerId" class="small">view profile</a> }</div>
+                <div><i class="bi bi-telephone me-1"></i><a href="tel:@Model.Phone">@Model.Phone</a></div>
+                <div><i class="bi bi-envelope me-1"></i><a href="mailto:@Model.Email">@Model.Email</a></div>
+                <hr />
+                <div><strong>@Model.OrderType</strong> · @(Model.ScheduledFor?.ToString("ddd, MMM d h:mm tt") ?? "ASAP")</div>
+                @if (Model.OrderType == OrderType.Delivery)
+                {
+                    <div class="mt-1">@Model.Address<br />@Model.City @Model.PostalCode</div>
+                    <a class="small" target="_blank" href="https://www.google.com/maps/search/?api=1&query=@Uri.EscapeDataString($"{Model.Address}, {Model.City} {Model.PostalCode}")"><i class="bi bi-map"></i> Open in maps</a>
+                }
+                @if (!string.IsNullOrEmpty(Model.Notes)) { <div class="alert alert-warning py-2 small mt-2 mb-0"><i class="bi bi-chat-left-text"></i> @Model.Notes</div> }
+                <div class="small text-muted mt-2">Placed @Model.CreatedAt.ToLocalTime().ToString("MMM d, yyyy h:mm tt")</div>
+            </div>
+        </div>
+        <div class="card mb-3">
+            <div class="card-header">Payment</div>
+            <div class="card-body">
+                <div>@Model.PaymentMethod.PaymentText() — <span class="badge bg-@Model.PaymentStatus.PaymentBadge()">@Model.PaymentStatus</span></div>
+                @if (!string.IsNullOrEmpty(Model.TransactionId)) { <div class="small text-muted">Transaction: @Model.TransactionId</div> }
+                <form method="post" action="/orders/updatepayment/@Model.Id" class="mt-2 d-flex gap-2">
+                    @Html.AntiForgeryToken()
+                    <select name="paymentStatus" class="form-select form-select-sm" asp-items="Html.GetEnumSelectList<PaymentStatus>()"></select>
+                    <input name="transactionId" class="form-control form-control-sm" placeholder="Txn ID" />
+                    <button class="btn btn-sm btn-dark">Save</button>
+                </form>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">Clover POS</div>
+            <div class="card-body small">
+                @if (Model.CloverOrderId != null) { <div class="text-success"><i class="bi bi-check-circle-fill"></i> Synced — Clover order <code>@Model.CloverOrderId</code></div> }
+                else { <div class="text-muted">Not synced to Clover.</div> }
+                @if (Model.CloverSyncError != null) { <div class="text-danger mt-1">@Model.CloverSyncError</div> }
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts { <script>$('select[name=paymentStatus]').val('@((int)Model.PaymentStatus)');</script> }

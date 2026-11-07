@@ -1,0 +1,56 @@
+@model List<Order>
+@{
+    var columns = new (string title, OrderStatus[] statuses, string color)[]
+    {
+        ("New", new[] { OrderStatus.Pending }, "danger"),
+        ("Accepted", new[] { OrderStatus.Confirmed }, "info"),
+        ("Preparing", new[] { OrderStatus.Preparing }, "primary"),
+        ("Ready / On the way", new[] { OrderStatus.ReadyForPickup, OrderStatus.OutForDelivery }, "success"),
+    };
+}
+<div class="row g-3">
+    @foreach (var col in columns)
+    {
+        var list = Model.Where(o => col.statuses.Contains(o.Status)).ToList();
+        <div class="col-md-6 col-xl-3">
+            <div class="kitchen-col">
+                <h6 class="text-@col.color d-flex justify-content-between">@col.title <span class="badge bg-@col.color">@list.Count</span></h6>
+                @foreach (var o in list)
+                {
+                    var mins = (int)(DateTime.UtcNow - o.CreatedAt).TotalMinutes;
+                    <div class="ticket @o.Status @(o.Status == OrderStatus.Pending ? "new" : "")">
+                        <div class="d-flex justify-content-between">
+                            <a href="/orders/details/@o.Id" class="fw-bold text-dark">#@o.OrderNumber</a>
+                            <span class="badge bg-@(mins > 30 ? "danger" : "light text-dark")">@mins min</span>
+                        </div>
+                        <div class="small"><strong>@o.OrderType</strong> · @(o.ScheduledFor?.ToString("ddd h:mm tt") ?? "ASAP") · @o.CustomerName</div>
+                        <ul class="small">
+                            @foreach (var i in o.Items) { <li><strong>@i.Quantity×</strong> @i.ProductName @if (!string.IsNullOrEmpty(i.OptionsText)) { <div class="text-muted">@i.OptionsText</div> }</li> }
+                        </ul>
+                        @if (!string.IsNullOrEmpty(o.Notes)) { <div class="small bg-warning-subtle rounded px-2 py-1 mb-2"><i class="bi bi-chat-left-text"></i> @o.Notes</div> }
+                        <div class="d-flex gap-1 flex-wrap">
+                            @switch (o.Status)
+                            {
+                                case OrderStatus.Pending:
+                                    <button class="btn btn-sm btn-success" data-kitchen-action="/orders/accept/@o.Id">Accept</button>
+                                    <button class="btn btn-sm btn-outline-danger" data-kitchen-action="/orders/updatestatus/@o.Id" data-status="@OrderStatus.Cancelled" onclick="return confirm('Reject and cancel this order?')">Reject</button>
+                                    break;
+                                case OrderStatus.Confirmed:
+                                    <button class="btn btn-sm btn-primary" data-kitchen-action="/orders/updatestatus/@o.Id" data-status="@OrderStatus.Preparing">Start preparing</button>
+                                    break;
+                                case OrderStatus.Preparing:
+                                    <button class="btn btn-sm btn-success" data-kitchen-action="/orders/updatestatus/@o.Id" data-status="@(o.OrderType == OrderType.Pickup ? OrderStatus.ReadyForPickup : OrderStatus.OutForDelivery)">@(o.OrderType == OrderType.Pickup ? "Ready for pickup" : "Out for delivery")</button>
+                                    break;
+                                default:
+                                    <button class="btn btn-sm btn-dark" data-kitchen-action="/orders/updatestatus/@o.Id" data-status="@OrderStatus.Delivered">@(o.OrderType == OrderType.Pickup ? "Collected" : "Delivered")</button>
+                                    break;
+                            }
+                            <a class="btn btn-sm btn-light" href="/orders/invoice/@o.Id" target="_blank" title="Print ticket"><i class="bi bi-printer"></i></a>
+                        </div>
+                    </div>
+                }
+                @if (list.Count == 0) { <div class="text-center text-muted small py-4">Nothing here</div> }
+            </div>
+        </div>
+    }
+</div>

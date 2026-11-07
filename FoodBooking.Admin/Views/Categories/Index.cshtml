@@ -1,0 +1,28 @@
+@model List<Category>
+@{ ViewData["Title"] = "Categories"; }
+<div class="toolbar"><a href="/categories/create" class="btn btn-primary btn-sm ms-auto"><i class="bi bi-plus-lg"></i> New category</a></div>
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead><tr><th></th><th>Name</th><th>Parent</th><th>Products</th><th>Order</th><th>Home</th><th>Status</th><th class="text-end">Actions</th></tr></thead>
+            <tbody>
+                @foreach (var c in Model)
+                {
+                    <tr>
+                        <td><img class="thumb" src="@(c.ImageUrl ?? "")" alt="" /></td>
+                        <td>@(c.ParentId != null ? "— " : "")<a href="/categories/edit/@c.Id" class="fw-semibold">@c.Icon @c.Name</a><div class="small text-muted">/category/@c.Slug</div></td>
+                        <td>@c.Parent?.Name</td>
+                        <td>@c.Products.Count</td>
+                        <td>@c.SortOrder</td>
+                        <td>@if (c.ShowOnHome) { <i class="bi bi-check-lg text-success"></i> }</td>
+                        <td>@if (c.IsActive) { <span class="badge bg-success">Active</span> } else { <span class="badge bg-secondary">Hidden</span> }</td>
+                        <td class="text-end text-nowrap">
+                            <a href="/categories/edit/@c.Id" class="btn btn-sm btn-light"><i class="bi bi-pencil"></i></a>
+                            <form method="post" action="/categories/delete/@c.Id" class="d-inline" data-confirm="Delete category @c.Name?">@Html.AntiForgeryToken()<button class="btn btn-sm btn-light text-danger"><i class="bi bi-trash"></i></button></form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

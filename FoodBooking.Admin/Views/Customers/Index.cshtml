@@ -1,0 +1,35 @@
+@model PagedList<Customer>
+@{
+    ViewData["Title"] = "Customers";
+    var stats = (Dictionary<int, (int Count, decimal Total)>)ViewBag.Stats;
+    var c = (await SettingsSvc.GetAsync()).CurrencySymbol;
+}
+<div class="toolbar">
+    <form method="get" class="d-flex gap-2"><input name="q" value="@ViewBag.Q" class="form-control form-control-sm" placeholder="Name, email or phone" style="width:260px" /><button class="btn btn-sm btn-dark"><i class="bi bi-search"></i></button></form>
+    <a href="/customers/export" class="btn btn-sm btn-outline-success ms-auto"><i class="bi bi-filetype-csv"></i> Export CSV</a>
+</div>
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead><tr><th>Customer</th><th>Email</th><th>Phone</th><th>City</th><th>Orders</th><th>Spent</th><th>Registered</th><th>Status</th></tr></thead>
+            <tbody>
+                @foreach (var x in Model.Items)
+                {
+                    var st = stats.TryGetValue(x.Id, out var v) ? v : (0, 0m);
+                    <tr onclick="location='/customers/details/@x.Id'" style="cursor:pointer">
+                        <td class="fw-semibold">@x.FullName</td>
+                        <td>@x.Email</td>
+                        <td>@x.Phone</td>
+                        <td>@x.City</td>
+                        <td>@st.Item1</td>
+                        <td>@st.Item2.Money(c)</td>
+                        <td class="small">@x.CreatedAt.ToLocalTime().ToString("MMM d, yyyy")</td>
+                        <td>@if (x.IsActive) { <span class="badge bg-success">Active</span> } else { <span class="badge bg-danger">Blocked</span> }</td>
+                    </tr>
+                }
+                @if (Model.Items.Count == 0) { <tr><td colspan="8" class="text-center text-muted py-4">No customers found.</td></tr> }
+            </tbody>
+        </table>
+    </div>
+    <partial name="_Pager" model="(Model.Page, Model.Pages, Model.Total)" />
+</div>

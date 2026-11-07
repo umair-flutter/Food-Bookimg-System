@@ -1,0 +1,36 @@
+@model Product
+@{
+    var s = await Site.SettingsAsync();
+    var hasOptions = Model.Options.Count > 0;
+}
+<div class="product-card h-100">
+    <a href="/product/@Model.Slug" class="product-thumb">
+        <img src="@Model.MainImage" alt="@Model.Name" loading="lazy" />
+        <div class="badges">
+            @if (Model.OnSale) { <span class="badge sale">-@(Math.Round((1 - Model.SellingPrice / Model.Price) * 100))%</span> }
+            @foreach (var t in Model.ProductTags.Where(pt => pt.Tag != null && pt.Tag.IsActive).Take(2))
+            {
+                <span class="badge" style="background:@t.Tag!.BadgeColor">@t.Tag.Name</span>
+            }
+        </div>
+        @if (Model.IsVegetarian) { <span class="veg-dot" title="Vegetarian"></span> }
+    </a>
+    <div class="product-body">
+        <a href="/product/@Model.Slug" class="product-name">@Model.Name @if (Model.IsSpicy) { <span title="Spicy">🌶️</span> }</a>
+        <p class="product-desc">@Model.ShortDescription</p>
+        <div class="d-flex justify-content-between align-items-center mt-auto">
+            <div class="price">
+                @Model.SellingPrice.Money(s.CurrencySymbol)
+                @if (Model.OnSale) { <del>@Model.Price.Money(s.CurrencySymbol)</del> }
+            </div>
+            @if (!Model.InStock)
+            {
+                <span class="badge bg-secondary">Sold out</span>
+            }
+            else
+            {
+                <button class="btn btn-add" data-add-to-cart="@Model.Id" title="@(hasOptions ? "Add with default options" : "Add to cart")"><i class="bi bi-plus-lg"></i></button>
+            }
+        </div>
+    </div>
+</div>

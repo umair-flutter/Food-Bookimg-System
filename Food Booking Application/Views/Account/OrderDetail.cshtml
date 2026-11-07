@@ -1,0 +1,62 @@
+@model Order
+@{ var s = await Site.SettingsAsync(); var c = s.CurrencySymbol; }
+<div class="page-hero"><div class="container"><h1>Order #@Model.OrderNumber</h1><nav><ol class="breadcrumb"><li class="breadcrumb-item"><a href="/account">Account</a></li><li class="breadcrumb-item"><a href="/account/orders">Orders</a></li><li class="breadcrumb-item active">#@Model.OrderNumber</li></ol></nav></div></div>
+<div class="container py-5">
+    <div class="row g-4">
+        <div class="col-lg-3"><partial name="_AccountNav" /></div>
+        <div class="col-lg-9">
+            <div class="card p-4 mb-4">
+                <div class="d-flex justify-content-between flex-wrap gap-2">
+                    <div>
+                        <span class="badge bg-@Model.Status.StatusBadge() fs-6">@Model.Status.StatusText()</span>
+                        <span class="badge bg-@Model.PaymentStatus.PaymentBadge() fs-6">@Model.PaymentStatus</span>
+                        <div class="small text-muted mt-2">Placed @Model.CreatedAt.ToLocalTime().ToString("MMM d, yyyy h:mm tt") · @Model.OrderType · @(Model.ScheduledFor?.ToString("ddd h:mm tt") ?? "ASAP") · @Model.PaymentMethod.PaymentText()</div>
+                    </div>
+                    <div class="d-flex gap-2 align-items-start flex-wrap">
+                        <a class="btn btn-sm btn-outline-dark" href="/order/invoice?number=@Model.OrderNumber&key=@Model.AccessKey"><i class="bi bi-receipt"></i> Invoice</a>
+                        <form method="post" action="/account/orders/@Model.OrderNumber/reorder">@Html.AntiForgeryToken()<button class="btn btn-sm btn-primary"><i class="bi bi-arrow-repeat"></i> Re-order</button></form>
+                        @if (Model.Status == OrderStatus.Pending)
+                        {
+                            <form method="post" action="/account/orders/@Model.OrderNumber/cancel" onsubmit="return confirm('Cancel this order?')">@Html.AntiForgeryToken()<button class="btn btn-sm btn-outline-danger"><i class="bi bi-x-circle"></i> Cancel</button></form>
+                        }
+                    </div>
+                </div>
+                <partial name="~/Views/Order/_StatusTimeline.cshtml" model="Model" />
+            </div>
+            <div class="row g-4">
+                <div class="col-md-7">
+                    <div class="card p-4">
+                        <h6>Items</h6>
+                        @foreach (var i in Model.Items)
+                        {
+                            <div class="d-flex gap-3 py-2 border-bottom">
+                                <img src="@(i.ImageUrl ?? "/img/no-image.svg")" style="width:56px;height:56px;object-fit:cover;border-radius:10px" alt="" />
+                                <div class="flex-grow-1 small"><div class="fw-semibold">@i.Quantity × @i.ProductName</div><div class="text-muted">@i.OptionsText</div></div>
+                                <strong>@i.LineTotal.Money(c)</strong>
+                            </div>
+                        }
+                        <div class="summary-row mt-2"><span>Subtotal</span><span>@Model.SubTotal.Money(c)</span></div>
+                        @if (Model.Discount > 0) { <div class="summary-row text-success"><span>Discount</span><span>-@Model.Discount.Money(c)</span></div> }
+                        @if (Model.Tax > 0) { <div class="summary-row"><span>Tax</span><span>@Model.Tax.Money(c)</span></div> }
+                        @if (Model.DeliveryCharge > 0) { <div class="summary-row"><span>Delivery</span><span>@Model.DeliveryCharge.Money(c)</span></div> }
+                        @if (Model.Tip > 0) { <div class="summary-row"><span>Tip</span><span>@Model.Tip.Money(c)</span></div> }
+                        <div class="summary-row summary-total"><span>Total</span><span>@Model.Total.Money(c)</span></div>
+                    </div>
+                </div>
+                <div class="col-md-5">
+                    <div class="card p-4 mb-4">
+                        <h6>@(Model.OrderType == OrderType.Delivery ? "Delivery address" : "Pickup")</h6>
+                        @if (Model.OrderType == OrderType.Delivery) { <p class="mb-0 small">@Model.CustomerName<br />@Model.Address<br />@Model.City @Model.PostalCode<br />@Model.Phone</p> }
+                        else { <p class="mb-0 small">Collect from: @s.Address</p> }
+                    </div>
+                    <div class="card p-4">
+                        <h6>Status history</h6>
+                        <ul class="list-unstyled small mb-0">
+                            @foreach (var h in Model.History.OrderByDescending(h => h.CreatedAt)) { <li class="mb-2"><strong>@h.Status.StatusText()</strong><br /><span class="text-muted">@h.CreatedAt.ToLocalTime().ToString("MMM d, h:mm tt")</span> @h.Note</li> }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

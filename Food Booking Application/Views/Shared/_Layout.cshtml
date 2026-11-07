@@ -1,0 +1,227 @@
+﻿@{
+    var s = await Site.SettingsAsync();
+    var cats = await Site.CategoriesAsync();
+    var pages = await Site.PagesAsync();
+    var status = await Site.StatusAsync();
+    var headerBanners = await Site.BannersAsync(BannerPosition.HeaderTop);
+    var hours = await Site.HoursAsync();
+    var isHome = ViewContext.RouteData.Values["controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["action"]?.ToString() == "Index";
+    var pageTitle = isHome || ViewData["Title"] == null ? (s.MetaTitle ?? s.CompanyName) : $"{ViewData["Title"]} | {s.CompanyName}";
+    var metaDesc = ViewData["MetaDescription"] as string ?? s.MetaDescription;
+    var customerName = User.Identity?.IsAuthenticated == true ? User.Identity.Name : null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@pageTitle</title>
+    <meta name="description" content="@metaDesc" />
+    <meta name="keywords" content="@s.MetaKeywords" />
+    <meta property="og:title" content="@pageTitle" />
+    <meta property="og:description" content="@metaDesc" />
+    <meta property="og:type" content="website" />
+    @if (ViewData["OgImage"] is string og) { <meta property="og:image" content="@og" /> }
+    <link rel="icon" href="@(s.FaviconUrl ?? "/favicon.ico")" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    @Html.Raw(s.HeadScripts)
+    @await RenderSectionAsync("Head", required: false)
+</head>
+<body>
+    @if (!string.IsNullOrWhiteSpace(s.AnnouncementText))
+    {
+        <div class="announcement">@s.AnnouncementText</div>
+    }
+    @foreach (var b in headerBanners)
+    {
+        <a class="header-strip d-block text-center" href="@(b.LinkUrl ?? "#")" style="@(b.ImageUrl != null ? $"background-image:url('{b.ImageUrl}')" : "")">
+            <strong>@b.Title</strong> @b.SubTitle @if (!string.IsNullOrEmpty(b.ButtonText)) { <span class="badge bg-light text-dark ms-2">@b.ButtonText</span> }
+        </a>
+    }
+
+    <div class="topbar d-none d-md-block">
+        <div class="container d-flex justify-content-between align-items-center">
+            <div class="d-flex gap-4">
+                @if (!string.IsNullOrEmpty(s.Phone)) { <a href="tel:@s.Phone"><i class="bi bi-telephone"></i> @s.Phone</a> }
+                @if (!string.IsNullOrEmpty(s.Email)) { <a href="mailto:@s.Email"><i class="bi bi-envelope"></i> @s.Email</a> }
+                <span class="store-status @(status.IsOpen ? "open" : "closed")"><i class="bi bi-circle-fill"></i> @status.Message</span>
+            </div>
+            <div class="d-flex gap-3 align-items-center">
+                <a href="/order/track"><i class="bi bi-geo-alt"></i> Track order</a>
+                <partial name="_Social" model="s" />
+            </div>
+        </div>
+    </div>
+
+    <header class="site-header sticky-top">
+        <nav class="navbar navbar-expand-lg">
+            <div class="container">
+                <a class="navbar-brand d-flex align-items-center gap-2" href="/">
+                    @if (!string.IsNullOrEmpty(s.LogoUrl)) { <img src="@s.LogoUrl" alt="@s.CompanyName" class="logo" /> }
+                    else { <span class="logo-mark">🍽️</span><span class="brand-name">@s.CompanyName</span> }
+                </a>
+                <div class="d-flex align-items-center gap-2 order-lg-3">
+                    <button class="btn btn-icon d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#mobileSearch" aria-label="Search"><i class="bi bi-search"></i></button>
+                    <div class="dropdown">
+                        <a class="btn btn-icon" href="#" data-bs-toggle="dropdown" aria-label="Account"><i class="bi bi-person"></i></a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                            @if (customerName != null)
+                            {
+                                <li><h6 class="dropdown-header">Hi, @customerName</h6></li>
+                                <li><a class="dropdown-item" href="/account"><i class="bi bi-speedometer2 me-2"></i>My account</a></li>
+                                <li><a class="dropdown-item" href="/account/orders"><i class="bi bi-bag me-2"></i>Order history</a></li>
+                                <li><a class="dropdown-item" href="/account/profile"><i class="bi bi-person-gear me-2"></i>Profile</a></li>
+                                <li><a class="dropdown-item" href="/account/change-password"><i class="bi bi-key me-2"></i>Change password</a></li>
+                                <li><hr class="dropdown-divider" /></li>
+                                <li><form method="post" action="/account/logout">@Html.AntiForgeryToken()<button class="dropdown-item text-danger"><i class="bi bi-box-arrow-right me-2"></i>Logout</button></form></li>
+                            }
+                            else
+                            {
+                                <li><a class="dropdown-item" href="/account/login"><i class="bi bi-box-arrow-in-right me-2"></i>Login</a></li>
+                                <li><a class="dropdown-item" href="/account/register"><i class="bi bi-person-plus me-2"></i>Create account</a></li>
+                                <li><a class="dropdown-item" href="/order/track"><i class="bi bi-geo-alt me-2"></i>Track order</a></li>
+                            }
+                        </ul>
+                    </div>
+                    <button class="btn btn-cart" type="button" data-bs-toggle="offcanvas" data-bs-target="#miniCart" aria-label="Cart">
+                        <i class="bi bi-bag"></i><span class="cart-count" data-cart-count>@Site.CartCount</span>
+                    </button>
+                    <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-label="Menu"><i class="bi bi-list fs-2"></i></button>
+                </div>
+                <div class="collapse navbar-collapse" id="mainNav">
+                    <ul class="navbar-nav mx-auto">
+                        <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+                        <li class="nav-item dropdown mega">
+                            <a class="nav-link dropdown-toggle" href="/menu" data-bs-toggle="dropdown">Menu</a>
+                            <div class="dropdown-menu shadow border-0 p-3">
+                                <div class="mega-grid">
+                                    @foreach (var c in cats)
+                                    {
+                                        <a class="mega-item" href="/category/@c.Slug"><span class="mega-icon">@c.Icon</span><span>@c.Name</span></a>
+                                        @foreach (var ch in c.Children) { <a class="mega-item sub" href="/category/@ch.Slug">@ch.Name</a> }
+                                    }
+                                </div>
+                                <a class="btn btn-primary btn-sm w-100 mt-2" href="/menu">View full menu</a>
+                            </div>
+                        </li>
+                        <li class="nav-item"><a class="nav-link" href="/tag/todays-deals">Deals</a></li>
+                        @foreach (var p in pages.Where(p => p.ShowInHeader))
+                        {
+                            <li class="nav-item"><a class="nav-link" href="/page/@p.Slug">@p.Title</a></li>
+                        }
+                        <li class="nav-item"><a class="nav-link" href="/contact">Contact</a></li>
+                    </ul>
+                    <form class="search-form d-none d-lg-flex" action="/search" method="get" autocomplete="off">
+                        <i class="bi bi-search"></i>
+                        <input type="search" name="q" class="form-control" placeholder="Search dishes…" value="@Context.Request.Query["q"]" data-suggest />
+                        <div class="suggest-box shadow"></div>
+                    </form>
+                </div>
+            </div>
+        </nav>
+        <div class="collapse" id="mobileSearch">
+            <div class="container pb-3">
+                <form class="search-form d-flex" action="/search" method="get" autocomplete="off">
+                    <i class="bi bi-search"></i>
+                    <input type="search" name="q" class="form-control" placeholder="Search dishes…" data-suggest />
+                    <div class="suggest-box shadow"></div>
+                </form>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        @RenderBody()
+    </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <a class="d-flex align-items-center gap-2 mb-3 text-white text-decoration-none" href="/">
+                        @if (!string.IsNullOrEmpty(s.FooterLogoUrl ?? s.LogoUrl)) { <img src="@(s.FooterLogoUrl ?? s.LogoUrl)" alt="@s.CompanyName" class="logo" /> }
+                        else { <span class="logo-mark">🍽️</span><span class="brand-name">@s.CompanyName</span> }
+                    </a>
+                    <p class="text-white-50">@s.FooterText</p>
+                    <partial name="_Social" model="s" />
+                    <form class="newsletter mt-4" data-newsletter>
+                        <label class="form-label small text-white-50">Get deals in your inbox</label>
+                        <div class="input-group">
+                            <input type="email" name="email" class="form-control" placeholder="Your email" required />
+                            <button class="btn btn-primary">Subscribe</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="col-6 col-lg-2">
+                    <h6>Menu</h6>
+                    <ul class="list-unstyled">
+                        @foreach (var c in cats.Take(7)) { <li><a href="/category/@c.Slug">@c.Name</a></li> }
+                    </ul>
+                </div>
+                <div class="col-6 col-lg-2">
+                    <h6>Information</h6>
+                    <ul class="list-unstyled">
+                        @foreach (var p in pages.Where(p => p.ShowInFooter)) { <li><a href="/page/@p.Slug">@p.Title</a></li> }
+                        <li><a href="/contact">Contact Us</a></li>
+                        <li><a href="/order/track">Track Order</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-4">
+                    <h6>Opening hours</h6>
+                    <ul class="list-unstyled hours">
+                        @foreach (var h in hours)
+                        {
+                            <li class="@(h.DayOfWeek == DateTime.Today.DayOfWeek ? "today" : "")"><span>@h.DayOfWeek</span><span>@(h.IsClosed ? "Closed" : $"{StoreHoursService.Fmt(h.OpenTime)} – {StoreHoursService.Fmt(h.CloseTime)}")</span></li>
+                        }
+                    </ul>
+                    @if (!string.IsNullOrEmpty(s.Address)) { <p class="mb-1"><i class="bi bi-geo-alt me-2"></i>@s.Address</p> }
+                    @if (!string.IsNullOrEmpty(s.Phone)) { <p class="mb-1"><i class="bi bi-telephone me-2"></i>@s.Phone</p> }
+                    @if (!string.IsNullOrEmpty(s.Email)) { <p class="mb-1"><i class="bi bi-envelope me-2"></i>@s.Email</p> }
+                </div>
+            </div>
+            <div class="footer-bottom d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+                <span>© @DateTime.Now.Year @s.CompanyName. All rights reserved.</span>
+                <span class="payments">
+                    @if (s.EnableCashOnDelivery) { <span title="Cash on delivery"><i class="bi bi-cash-coin"></i></span> }
+                    @if (s.EnableCreditCard) { <span title="Credit card"><i class="bi bi-credit-card-2-front"></i></span> }
+                    @if (s.EnablePaypal) { <span title="PayPal"><i class="bi bi-paypal"></i></span> }
+                </span>
+            </div>
+        </div>
+    </footer>
+
+    @if (!string.IsNullOrEmpty(s.WhatsappNumber))
+    {
+        <a class="whatsapp-float" href="https://wa.me/@(new string(s.WhatsappNumber.Where(char.IsDigit).ToArray()))" target="_blank" rel="noopener" aria-label="WhatsApp"><i class="bi bi-whatsapp"></i></a>
+    }
+    <button class="back-to-top" aria-label="Back to top"><i class="bi bi-arrow-up"></i></button>
+
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="miniCart">
+        <div class="offcanvas-header border-bottom">
+            <h5 class="offcanvas-title"><i class="bi bi-bag me-2"></i>Your cart</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body p-0" data-mini-cart>
+            <div class="p-5 text-center text-muted"><div class="spinner-border"></div></div>
+        </div>
+    </div>
+
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toasts"></div>
+    @Html.AntiForgeryToken()
+
+    <script>window.FB_CURRENCY = @Json.Serialize(s.CurrencySymbol);</script>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        @if (TempData["Success"] is string ok) { <text>FB.toast(@Json.Serialize(ok), 'success');</text> }
+        @if (TempData["Error"] is string err) { <text>FB.toast(@Json.Serialize(err), 'danger');</text> }
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

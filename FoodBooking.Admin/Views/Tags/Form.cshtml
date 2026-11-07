@@ -1,0 +1,25 @@
+@model Tag
+@{ ViewData["Title"] = Model.Id == 0 ? "New Tag" : "Edit Tag"; }
+<div class="toolbar"><a href="/tags" class="btn btn-light btn-sm"><i class="bi bi-arrow-left"></i> Tags</a></div>
+<div class="card" style="max-width:760px">
+    <div class="card-body">
+        <form method="post" action="/tags/save">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <div asp-validation-summary="All" class="text-danger small mb-2"></div>
+            <div class="row g-3">
+                <div class="col-md-6"><label asp-for="Name" class="form-label"></label><input asp-for="Name" class="form-control" /></div>
+                <div class="col-md-6"><label asp-for="Slug" class="form-label">URL slug</label><input asp-for="Slug" class="form-control" placeholder="auto" /></div>
+                <div class="col-12"><label asp-for="Subtitle" class="form-label"></label><input asp-for="Subtitle" class="form-control" /></div>
+                <div class="col-md-4"><label asp-for="BadgeColor" class="form-label">Badge colour</label><input asp-for="BadgeColor" type="color" class="form-control form-control-color w-100" /></div>
+                <div class="col-md-4"><label asp-for="HomeProductCount" class="form-label">Products on home page</label><input asp-for="HomeProductCount" class="form-control" min="1" max="24" /></div>
+                <div class="col-md-4"><label asp-for="SortOrder" class="form-label">Sort order</label><input asp-for="SortOrder" class="form-control" /></div>
+                <div class="col-12">
+                    <div class="form-check form-check-inline"><input asp-for="IsActive" class="form-check-input" /><label asp-for="IsActive" class="form-check-label">Active</label></div>
+                    <div class="form-check form-check-inline"><input asp-for="ShowOnHome" class="form-check-input" /><label asp-for="ShowOnHome" class="form-check-label">Show as a section on the home page</label></div>
+                </div>
+            </div>
+            <button class="btn btn-primary mt-3"><i class="bi bi-save"></i> Save</button>
+        </form>
+    </div>
+</div>

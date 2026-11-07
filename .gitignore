@@ -1,0 +1,19 @@
+# Build output
+bin/
+obj/
+publish/
+*.user
+*.suo
+
+# IDE
+.vs/
+.vscode/
+.idea/
+
+# Uploaded / generated images (demo images are regenerated when the database is seeded)
+uploads/*
+!uploads/.gitkeep
+
+# Local secrets / overrides
+appsettings.*.local.json
+*.log
